@@ -8,9 +8,14 @@ from sqlalchemy import select
 
 from app.dependencies import get_db
 from app.auth import get_current_user
-from app.models.core import User, Conversation, Message, Fact, Decision, Task, Deadline, Observation
-from app.extraction.schemas import ExtractionResult, FactItem, DecisionItem, ConsideredOptionItem, TaskItem, DeadlineItem, ContextItem
+from app.models.core import (
+    User, Conversation, Message, Fact, Decision, Task, 
+    Deadline, Observation, Context, ContextAssignment
+)
+from app.extraction.schemas import ExtractionResult
 from app.extraction.service import ExtractionService
+from app.extraction.context import ContextClassifier
+from app.routers.contexts import get_context_classifier
 
 router = APIRouter()
 
@@ -126,16 +131,15 @@ async def create_conversation_message(
     payload: MessageCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    extractor: ExtractionService = Depends(get_extraction_service)
+    extractor: ExtractionService = Depends(get_extraction_service),
+    classifier: ContextClassifier = Depends(get_context_classifier)
 ):
-    # Verify conversation exists
     stmt = select(Conversation).where(Conversation.id == id, Conversation.user_id == current_user.id)
     result = await db.execute(stmt)
     conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
-    # 1. Save the raw user message to the database
     message = Message(
         conversation_id=id,
         role=payload.role,
@@ -145,65 +149,101 @@ async def create_conversation_message(
     await db.commit()
     await db.refresh(message)
     
-    # 2. Run the extraction service (if message is from user)
     extraction_result = ExtractionResult(
         facts=[], decisions=[], considered_options=[], tasks=[], deadlines=[], contexts=[],
         metadata={"confidence": 1.0, "reasoning": "Extraction skipped for non-user roles."}
     )
     
     if payload.role == "user":
+        # 1. Classify Context / Detect Shift
+        ctx_stmt = select(Context).where(Context.user_id == current_user.id)
+        ctx_res = await db.execute(ctx_stmt)
+        existing_contexts = ctx_res.scalars().all()
+        
+        classification = await classifier.classify(payload.content, existing_contexts)
+        
+        active_context_id = conversation.context_id
+        shift_detected = classification.get("shift_detected", False)
+        
+        if shift_detected and classification.get("new_context"):
+            new_ctx_data = classification["new_context"]
+            new_ctx = Context(
+                user_id=current_user.id,
+                name=new_ctx_data["name"],
+                description=new_ctx_data.get("description"),
+                confidence=classification.get("confidence", 1.0),
+                is_active=True
+            )
+            db.add(new_ctx)
+            await db.flush()
+            active_context_id = new_ctx.id
+            conversation.context_id = active_context_id
+            db.add(conversation)
+        elif classification.get("matched_context_name"):
+            matched_name = classification["matched_context_name"].lower().strip()
+            matched_ctx = next((c for c in existing_contexts if c.name.lower().strip() == matched_name), None)
+            if matched_ctx:
+                active_context_id = matched_ctx.id
+                if conversation.context_id != active_context_id:
+                    conversation.context_id = active_context_id
+                    db.add(conversation)
+
+        if active_context_id:
+            assignment = ContextAssignment(
+                entity_type="message",
+                entity_id=message.id,
+                context_id=active_context_id
+            )
+            db.add(assignment)
+            
+        # 2. Run Extraction Engine
         extraction_result, observations = await extractor.extract_from_message(payload.content)
         
-        # 3. Persist valid extractions
-        # facts
+        # 3. Persist valid extractions and link to active context
         for fact in extraction_result.facts:
             db_fact = Fact(
                 user_id=current_user.id,
                 entity=fact.entity or "general",
                 value=fact.value,
-                context_id=conversation.context_id,
+                context_id=active_context_id,
                 source_message_id=message.id,
                 confidence=fact.confidence
             )
             db.add(db_fact)
             
-        # decisions
         for dec in extraction_result.decisions:
             db_dec = Decision(
                 user_id=current_user.id,
                 chosen_option=dec.value,
                 rejected_options=[],
-                context_id=conversation.context_id,
+                context_id=active_context_id,
                 source_message_id=message.id,
                 confidence=dec.confidence
             )
             db.add(db_dec)
             
-        # tasks
         for tsk in extraction_result.tasks:
             db_tsk = Task(
                 user_id=current_user.id,
                 task=tsk.value,
                 status="pending",
-                context_id=conversation.context_id,
+                context_id=active_context_id,
                 source_message_id=message.id
             )
             db.add(db_tsk)
             
-        # deadlines
         for dl in extraction_result.deadlines:
             due_date = parse_deadline_date(dl.value)
             db_dl = Deadline(
                 user_id=current_user.id,
                 title=dl.value,
                 due_at=due_date,
-                context_id=conversation.context_id,
+                context_id=active_context_id,
                 source_message_id=message.id,
                 confidence=dl.confidence
             )
             db.add(db_dl)
             
-        # considered_options -> store as observations since no separate table exists
         for opt in extraction_result.considered_options:
             db_obs = Observation(
                 user_id=current_user.id,
@@ -214,7 +254,6 @@ async def create_conversation_message(
             )
             db.add(db_obs)
             
-        # contexts -> store as observations since Context Engine is built in next phase
         for ctx in extraction_result.contexts:
             db_obs = Observation(
                 user_id=current_user.id,
@@ -225,7 +264,6 @@ async def create_conversation_message(
             )
             db.add(db_obs)
             
-        # 4. Persist demoted/rejected observations (sub-threshold items)
         for obs in observations:
             db_obs = Observation(
                 user_id=current_user.id,
@@ -248,7 +286,8 @@ async def create_message(
     payload: MessageCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    extractor: ExtractionService = Depends(get_extraction_service)
+    extractor: ExtractionService = Depends(get_extraction_service),
+    classifier: ContextClassifier = Depends(get_context_classifier)
 ):
     if not payload.conversation_id:
         raise HTTPException(status_code=400, detail="conversation_id is required")
@@ -258,5 +297,6 @@ async def create_message(
         payload=payload,
         db=db,
         current_user=current_user,
-        extractor=extractor
+        extractor=extractor,
+        classifier=classifier
     )

@@ -4,6 +4,7 @@ import uuid
 from app.main import app
 from app.auth import get_current_user
 from app.routers.conversations import get_extraction_service
+from app.routers.contexts import get_context_classifier
 from app.models.core import User
 from app.extraction.schemas import ExtractionResult
 
@@ -28,10 +29,24 @@ class MockExtractionService:
 async def mock_get_extraction_service():
     return MockExtractionService()
 
+class MockContextClassifier:
+    async def classify(self, message: str, existing_contexts: list):
+        return {
+            "matched_context_name": None,
+            "shift_detected": False,
+            "new_context": None,
+            "confidence": 1.0,
+            "reasoning": "Mocked context classifier response"
+        }
+
+async def mock_get_context_classifier():
+    return MockContextClassifier()
+
 @pytest.fixture(autouse=True)
 def setup_auth_override():
     app.dependency_overrides[get_current_user] = mock_get_current_user_dep
     app.dependency_overrides[get_extraction_service] = mock_get_extraction_service
+    app.dependency_overrides[get_context_classifier] = mock_get_context_classifier
     yield
     app.dependency_overrides.clear()
 
@@ -82,18 +97,15 @@ async def test_add_message():
 async def test_submit_feedback():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        # Create conversation
         response = await ac.post("/api/v1/conversations", json={"title": "Feedback Chat"})
         conv_id = response.json()["id"]
 
-        # Add message to get a valid extraction run message id
         msg_resp = await ac.post(f"/api/v1/conversations/{conv_id}/messages", json={
             "content": "AURA feedback test message",
             "role": "user"
         })
         msg_id = msg_resp.json()["message"]["id"]
 
-        # Submit feedback
         fb_resp = await ac.post("/api/v1/extraction/feedback", json={
             "extraction_run_id": msg_id,
             "feedback_type": "correct",
