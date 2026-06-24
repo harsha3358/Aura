@@ -16,12 +16,26 @@ function App() {
     toggleTaskStatus,
     createContext,
     fetchBriefToday,
-    fetchKnowledge
+    fetchKnowledge,
+    submitBriefFeedback
   } = useAuraStore()
 
   const [currentView, setCurrentView] = useState<'dashboard' | 'explorer'>('dashboard')
   const [showRawBrief, setShowRawBrief] = useState(false)
   
+  // Founder Feedback State
+  const [feedbackRating, setFeedbackRating] = useState<'useful' | 'neutral' | 'not_useful' | null>(null)
+  const [feedbackComment, setFeedbackComment] = useState('')
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+
+  // Reset feedback state when brief changes
+  useEffect(() => {
+    setFeedbackRating(null)
+    setFeedbackComment('')
+    setFeedbackSubmitted(false)
+  }, [brief?.id])
+
   // Knowledge Explorer State
   const [explorerTab, setExplorerTab] = useState<'facts' | 'decisions' | 'tasks' | 'deadlines' | 'contexts'>('facts')
   const [searchQuery, setSearchQuery] = useState('')
@@ -405,6 +419,97 @@ function App() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Founder Feedback Widget */}
+                {brief && (
+                  <div className="mt-8 pt-6 border-t border-[#1e1e24] space-y-4">
+                    <div className="flex flex-col space-y-1">
+                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Daily Brief Evaluation</h4>
+                      <p className="text-[11px] text-[#a1a1aa]">Help AURA learn what information makes your morning better.</p>
+                    </div>
+
+                    {feedbackSubmitted ? (
+                      <div className="bg-[rgba(16,185,129,0.06)] border border-[#10b981]/20 text-[#10b981] text-xs px-4 py-3 rounded-lg flex items-center justify-between">
+                        <span>✓ Feedback recorded in database. Thank you for dogfooding AURA!</span>
+                        <button 
+                          type="button"
+                          onClick={() => setFeedbackSubmitted(false)}
+                          className="text-[#a78bfa] hover:text-white underline text-[10px] cursor-pointer bg-transparent border-0 outline-none"
+                        >
+                          Change rating
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-3">
+                          <button
+                            type="button"
+                            onClick={() => setFeedbackRating('useful')}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all cursor-pointer text-xs font-medium ${
+                              feedbackRating === 'useful'
+                                ? 'bg-[rgba(16,185,129,0.1)] border-[#10b981] text-white font-semibold'
+                                : 'bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#10b981]/40 hover:text-white'
+                            }`}
+                          >
+                            <span>👍</span>
+                            <span>Useful</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFeedbackRating('neutral')}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all cursor-pointer text-xs font-medium ${
+                              feedbackRating === 'neutral'
+                                ? 'bg-[rgba(245,158,11,0.1)] border-[#f59e0b] text-white font-semibold'
+                                : 'bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#f59e0b]/40 hover:text-white'
+                            }`}
+                          >
+                            <span>😐</span>
+                            <span>Neutral</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFeedbackRating('not_useful')}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all cursor-pointer text-xs font-medium ${
+                              feedbackRating === 'not_useful'
+                                ? 'bg-[rgba(239,68,68,0.1)] border-[#ef4444] text-white font-semibold'
+                                : 'bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#ef4444]/40 hover:text-white'
+                            }`}
+                          >
+                            <span>👎</span>
+                            <span>Not Useful</span>
+                          </button>
+                        </div>
+
+                        {feedbackRating && (
+                          <div className="space-y-3 animate-fade-in">
+                            <textarea
+                              rows={2}
+                              value={feedbackComment}
+                              onChange={(e) => setFeedbackComment(e.target.value)}
+                              placeholder="Add optional notes (e.g. what was useful or annoying)..."
+                              className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-xs text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all resize-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                setIsSubmittingFeedback(true)
+                                const success = await submitBriefFeedback(brief.id, feedbackRating, feedbackComment)
+                                setIsSubmittingFeedback(false)
+                                if (success) {
+                                  setFeedbackSubmitted(true)
+                                }
+                              }}
+                              disabled={isSubmittingFeedback}
+                              className="bg-white hover:bg-zinc-100 text-zinc-950 font-semibold px-4 py-1.5 rounded-lg text-xs transition-all disabled:opacity-55 cursor-pointer"
+                            >
+                              {isSubmittingFeedback ? "Submitting..." : "Submit Feedback"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

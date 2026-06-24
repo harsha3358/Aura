@@ -111,3 +111,13 @@ async def test_briefing_generation_and_retrieval(anyio_backend):
         get_data = get_response.json()
         assert get_data["id"] == data["id"]
         assert get_data["rendered_brief"] == data["rendered_brief"]
+
+        # Submit Brief Feedback
+        feedback_response = await ac.post(
+            f"/api/v1/brief/{data['id']}/feedback",
+            json={"rating": "useful", "feedback": "Great brief!"}
+        )
+        assert feedback_response.status_code == 201
+        fb_data = feedback_response.json()
+        assert fb_data["status"] == "success"
+        assert "feedback_id" in fb_data

@@ -95,6 +95,7 @@ interface AuraState {
   fetchKnowledge: () => Promise<void>
   toggleTaskStatus: (taskId: string) => Promise<void>
   createContext: (name: string, description?: string) => Promise<void>
+  submitBriefFeedback: (briefId: string, rating: string, comment?: string) => Promise<boolean>
 }
 
 // Pre-populated mock data for UI-first design
@@ -155,8 +156,8 @@ const mockContexts: ContextItem[] = [
 
 const API_PREFIX = '/api/v1'
 
-const apiFetch = async (url: string, options: RequestInit = {}) => {
-  const token = useAuraStore.getState().token || localStorage.getItem('aura_token')
+const apiFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const token = localStorage.getItem('aura_token')
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -351,6 +352,19 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       set((state) => ({
         contexts: [localCtx, ...state.contexts]
       }))
+    }
+  },
+
+  submitBriefFeedback: async (briefId: string, rating: string, comment = ""): Promise<boolean> => {
+    try {
+      const res = await apiFetch(`${API_PREFIX}/brief/${briefId}/feedback`, {
+        method: 'POST',
+        body: JSON.stringify({ rating, feedback: comment })
+      })
+      return res.ok
+    } catch (err) {
+      console.error("Failed to submit feedback to API", err)
+      return false
     }
   }
 }))

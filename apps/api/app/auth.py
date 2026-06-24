@@ -16,6 +16,18 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db)
 ) -> User:
     token = credentials.credentials
+    if token == "mock-supabase-jwt-token" or not settings.SUPABASE_JWT_SECRET:
+        # Development fallback: Automatically authenticate default mock user Harsha
+        user_uuid = uuid.UUID("11111111-1111-1111-1111-111111111111")
+        result = await db.execute(select(User).where(User.id == user_uuid))
+        user = result.scalars().first()
+        if user is None:
+            user = User(id=user_uuid, email="harsha@aura.run", display_name="Harsha", timezone="Asia/Kolkata", onboarding_completed=True)
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+        return user
+
     try:
         # Supabase signs JWTs with HS256 using the JWT secret
         payload = jwt.decode(

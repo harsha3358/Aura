@@ -168,7 +168,21 @@ class ExecutiveBrief(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     
     user = relationship("User")
+    feedbacks = relationship("BriefFeedback", back_populates="brief", cascade="all, delete-orphan")
     
     __table_args__ = (
         UniqueConstraint("user_id", "brief_date", name="uq_user_brief_date"),
     )
+
+class BriefFeedback(Base):
+    __tablename__ = "brief_feedback"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    brief_id = Column(UUID(as_uuid=True), ForeignKey("executive_briefs.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    rating = Column(String, nullable=False) # e.g. "useful", "neutral", "not_useful"
+    feedback = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    
+    user = relationship("User")
+    brief = relationship("ExecutiveBrief", back_populates="feedbacks")
