@@ -41,3 +41,12 @@ Never optimize for writing code. Optimize for:
 - Knowledge Accuracy
 - Knowledge Pollution Rate (< 5%)
 - Hours Saved Per User Per Week
+
+## UI First Rule
+For any frontend feature:
+1. Build with mock data
+2. Validate UX
+3. Connect API
+4. Optimize
+
+Never block frontend work on backend work.
