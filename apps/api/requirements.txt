@@ -8,3 +8,5 @@ pgvector
 pydantic
 pydantic-settings
 PyJWT
+pytest
+httpx
