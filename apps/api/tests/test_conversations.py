@@ -77,3 +77,30 @@ async def test_add_message():
         conv_data = response.json()
         assert len(conv_data["messages"]) == 1
         assert conv_data["messages"][0]["content"] == "Hello AURA"
+
+@pytest.mark.anyio
+async def test_submit_feedback():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        # Create conversation
+        response = await ac.post("/api/v1/conversations", json={"title": "Feedback Chat"})
+        conv_id = response.json()["id"]
+
+        # Add message to get a valid extraction run message id
+        msg_resp = await ac.post(f"/api/v1/conversations/{conv_id}/messages", json={
+            "content": "AURA feedback test message",
+            "role": "user"
+        })
+        msg_id = msg_resp.json()["message"]["id"]
+
+        # Submit feedback
+        fb_resp = await ac.post("/api/v1/extraction/feedback", json={
+            "extraction_run_id": msg_id,
+            "feedback_type": "correct",
+            "comment": "Perfect extraction"
+        })
+        assert fb_resp.status_code == 201
+        fb_data = fb_resp.json()
+        assert fb_data["extraction_run_id"] == msg_id
+        assert fb_data["feedback_type"] == "correct"
+        assert fb_data["comment"] == "Perfect extraction"
