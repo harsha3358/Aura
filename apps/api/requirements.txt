@@ -7,3 +7,4 @@ asyncpg
 pgvector
 pydantic
 pydantic-settings
+PyJWT
