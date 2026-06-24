@@ -153,9 +153,23 @@ const mockContexts: ContextItem[] = [
   { id: "ctx-2", name: "Learning", description: "React 19 & Tailwind v4 experimental features", confidence: 0.9, is_active: false, created_at: "2026-06-24T06:30:00Z" }
 ]
 
+const API_PREFIX = '/api/v1'
+
+const apiFetch = async (url: string, options: RequestInit = {}) => {
+  const token = useAuraStore.getState().token || localStorage.getItem('aura_token')
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...options.headers,
+  }
+  return fetch(url, { ...options, headers })
+}
+
+const initialToken = localStorage.getItem('aura_token')
+
 export const useAuraStore = create<AuraState>((set, get) => ({
-  isAuthenticated: false,
-  token: null,
+  isAuthenticated: !!initialToken,
+  token: initialToken,
   user: null,
   brief: null,
   facts: [],
@@ -169,16 +183,31 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   login: async (email, password) => {
     set({ loading: true, error: null })
     try {
-      // Simulate auth success
+      // Setup mock JWT token for local API authentication
+      const token = "mock-supabase-jwt-token"
+      localStorage.setItem('aura_token', token)
       set({ 
         isAuthenticated: true, 
-        token: "mock-supabase-jwt-token", 
-        user: mockUser,
-        loading: false 
+        token: token,
       })
-      // Fetch initial mock data
+
+      // Fetch user profile from API to verify token/session
+      try {
+        const res = await apiFetch(`${API_PREFIX}/users/me`)
+        if (res.ok) {
+          const userData = await res.json()
+          set({ user: userData })
+        } else {
+          set({ user: mockUser })
+        }
+      } catch (e) {
+        set({ user: mockUser })
+      }
+
+      // Pre-fetch briefings and explorer data
       await get().fetchBriefToday()
       await get().fetchKnowledge()
+      set({ loading: false })
       return true
     } catch (err: any) {
       set({ error: err.message || "Login failed", loading: false })
@@ -187,6 +216,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   },
 
   logout: () => {
+    localStorage.removeItem('aura_token')
     set({ 
       isAuthenticated: false, 
       token: null, 
@@ -201,44 +231,126 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   },
 
   fetchBriefToday: async () => {
-    set({ loading: true })
-    // Pre-populate mock brief
-    set({ brief: mockBrief, loading: false })
+    set({ loading: true, error: null })
+    try {
+      const res = await apiFetch(`${API_PREFIX}/brief/today`)
+      if (res.ok) {
+        const briefData = await res.json()
+        set({ brief: briefData, loading: false })
+      } else {
+        set({ brief: mockBrief, loading: false })
+      }
+    } catch (err: any) {
+      set({ brief: mockBrief, loading: false })
+    }
   },
 
   fetchKnowledge: async () => {
-    set({ loading: true })
-    set({
-      facts: mockFacts,
-      decisions: mockDecisions,
-      tasks: mockTasks,
-      deadlines: mockDeadlines,
-      contexts: mockContexts,
-      loading: false
-    })
+    set({ loading: true, error: null })
+    try {
+      const [ctxRes, factsRes, decRes, tasksRes, dlRes] = await Promise.all([
+        apiFetch(`${API_PREFIX}/contexts`),
+        apiFetch(`${API_PREFIX}/facts`),
+        apiFetch(`${API_PREFIX}/decisions`),
+        apiFetch(`${API_PREFIX}/tasks`),
+        apiFetch(`${API_PREFIX}/deadlines`),
+      ])
+
+      const contextsData = ctxRes.ok ? await ctxRes.json() : mockContexts
+      const factsData = factsRes.ok ? await factsRes.json() : mockFacts
+      const decisionsData = decRes.ok ? await decRes.json() : mockDecisions
+      const tasksData = tasksRes.ok ? await tasksRes.json() : mockTasks
+      const deadlinesData = dlRes.ok ? await dlRes.json() : mockDeadlines
+
+      set({
+        contexts: contextsData,
+        facts: factsData,
+        decisions: decisionsData,
+        tasks: tasksData,
+        deadlines: deadlinesData,
+        loading: false
+      })
+    } catch (err: any) {
+      set({
+        contexts: mockContexts,
+        facts: mockFacts,
+        decisions: mockDecisions,
+        tasks: mockTasks,
+        deadlines: mockDeadlines,
+        loading: false
+      })
+    }
   },
 
   toggleTaskStatus: async (taskId) => {
+    const originalTasks = get().tasks
+    const taskToToggle = originalTasks.find(t => t.id === taskId)
+    if (!taskToToggle) return
+
+    const newStatus = taskToToggle.status === "completed" ? "pending" : "completed"
+    
+    // Optimistic UI update
     set((state) => ({
       tasks: state.tasks.map(t => 
         t.id === taskId 
-          ? { ...t, status: t.status === "completed" ? "pending" : "completed" }
+          ? { ...t, status: newStatus }
           : t
       )
     }))
+
+    try {
+      const res = await apiFetch(`${API_PREFIX}/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      })
+      if (!res.ok) {
+        // Rollback on error
+        set({ tasks: originalTasks })
+      }
+    } catch (err) {
+      // Rollback on network error
+      set({ tasks: originalTasks })
+    }
   },
 
   createContext: async (name, description = "") => {
-    const newContext: ContextItem = {
-      id: `ctx-${Date.now()}`,
-      name,
-      description,
-      confidence: 1.0,
-      is_active: false,
-      created_at: new Date().toISOString()
+    try {
+      const res = await apiFetch(`${API_PREFIX}/contexts`, {
+        method: 'POST',
+        body: JSON.stringify({ name, description })
+      })
+      if (res.ok) {
+        const newCtx = await res.json()
+        set((state) => ({
+          contexts: [newCtx, ...state.contexts]
+        }))
+      } else {
+        // Fallback local creation
+        const localCtx: ContextItem = {
+          id: `ctx-${Date.now()}`,
+          name,
+          description,
+          confidence: 1.0,
+          is_active: false,
+          created_at: new Date().toISOString()
+        }
+        set((state) => ({
+          contexts: [localCtx, ...state.contexts]
+        }))
+      }
+    } catch (err) {
+      // Fallback local creation
+      const localCtx: ContextItem = {
+        id: `ctx-${Date.now()}`,
+        name,
+        description,
+        confidence: 1.0,
+        is_active: false,
+        created_at: new Date().toISOString()
+      }
+      set((state) => ({
+        contexts: [localCtx, ...state.contexts]
+      }))
     }
-    set((state) => ({
-      contexts: [newContext, ...state.contexts]
-    }))
   }
 }))
