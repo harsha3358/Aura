@@ -145,3 +145,14 @@ class ExtractionFeedback(Base):
     
     user = relationship("User")
     message = relationship("Message", foreign_keys=[extraction_run_id])
+
+class ContextAssignment(Base):
+    __tablename__ = "context_assignments"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    entity_type = Column(String, nullable=False) # e.g. "message", "fact", "task"
+    entity_id = Column(UUID(as_uuid=True), nullable=False)
+    context_id = Column(UUID(as_uuid=True), ForeignKey("contexts.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    
+    context = relationship("Context")
