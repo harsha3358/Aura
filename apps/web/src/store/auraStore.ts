@@ -13,7 +13,9 @@ export interface FactItem {
   entity: string
   value: string
   confidence: number
-  category: string
+  category?: string
+  context_id?: string
+  project_id?: string
   created_at: string
 }
 
@@ -21,6 +23,8 @@ export interface DecisionItem {
   id: string
   chosen_option: string
   confidence: number
+  context_id?: string
+  project_id?: string
   created_at: string
 }
 
@@ -29,6 +33,8 @@ export interface TaskItem {
   task: string
   status: string
   priority: number
+  context_id?: string
+  project_id?: string
   created_at: string
 }
 
@@ -37,6 +43,8 @@ export interface DeadlineItem {
   title: string
   due_at: string
   confidence: number
+  context_id?: string
+  project_id?: string
   created_at: string
 }
 
@@ -115,29 +123,29 @@ const mockBrief: ExecutiveBrief = {
 }
 
 const mockFacts: FactItem[] = [
-  { id: "f-1", entity: "project", value: "AURA is a personal cognitive operating system", confidence: 1.0, category: "project_detail", created_at: "2026-06-24T12:00:00Z" },
-  { id: "f-2", entity: "frontend", value: "React 19, Vite, Tailwind v4 and Zustand are used for the frontend", confidence: 0.95, category: "tech_stack", created_at: "2026-06-24T12:05:00Z" },
-  { id: "f-3", entity: "database", value: "PostgreSQL is used as the primary database", confidence: 1.0, category: "tech_stack", created_at: "2026-06-24T12:10:00Z" },
-  { id: "f-4", entity: "metric", value: "The founder dogfood metric is tracked daily", confidence: 1.0, category: "business_rule", created_at: "2026-06-24T12:15:00Z" },
-  { id: "f-5", entity: "LLM", value: "Local-first Ollama is the default LLM provider", confidence: 0.9, category: "tech_stack", created_at: "2026-06-24T12:20:00Z" }
+  { id: "f-1", entity: "project", value: "AURA is a personal cognitive operating system", confidence: 1.0, category: "project_detail", context_id: "ctx-1", created_at: "2026-06-24T12:00:00Z" },
+  { id: "f-2", entity: "frontend", value: "React 19, Vite, Tailwind v4 and Zustand are used for the frontend", confidence: 0.95, category: "tech_stack", context_id: "ctx-1", created_at: "2026-06-24T12:05:00Z" },
+  { id: "f-3", entity: "database", value: "PostgreSQL is used as the primary database", confidence: 1.0, category: "tech_stack", context_id: "ctx-1", created_at: "2026-06-24T12:10:00Z" },
+  { id: "f-4", entity: "metric", value: "The founder dogfood metric is tracked daily", confidence: 1.0, category: "business_rule", context_id: "ctx-1", created_at: "2026-06-24T12:15:00Z" },
+  { id: "f-5", entity: "LLM", value: "Local-first Ollama is the default LLM provider", confidence: 0.9, category: "tech_stack", context_id: "ctx-2", created_at: "2026-06-24T12:20:00Z" }
 ]
 
 const mockDecisions: DecisionItem[] = [
-  { id: "d-1", chosen_option: "PostgreSQL selected over Neo4j", confidence: 1.0, created_at: "2026-06-24T10:00:00Z" },
-  { id: "d-2", chosen_option: "Skip Embeddings in Sprint 3 to focus on cognition first", confidence: 0.95, created_at: "2026-06-24T11:00:00Z" },
-  { id: "d-3", chosen_option: "Focus on Daily Brief MVP first", confidence: 0.9, created_at: "2026-06-24T11:30:00Z" }
+  { id: "d-1", chosen_option: "PostgreSQL selected over Neo4j", confidence: 1.0, context_id: "ctx-1", created_at: "2026-06-24T10:00:00Z" },
+  { id: "d-2", chosen_option: "Skip Embeddings in Sprint 3 to focus on cognition first", confidence: 0.95, context_id: "ctx-1", created_at: "2026-06-24T11:00:00Z" },
+  { id: "d-3", chosen_option: "Focus on Daily Brief MVP first", confidence: 0.9, context_id: "ctx-1", created_at: "2026-06-24T11:30:00Z" }
 ]
 
 const mockTasks: TaskItem[] = [
-  { id: "t-1", task: "Finish Knowledge Explorer", status: "pending", priority: 1, created_at: "2026-06-24T09:00:00Z" },
-  { id: "t-2", task: "Build Executive Brief UI", status: "completed", priority: 1, created_at: "2026-06-24T08:00:00Z" },
-  { id: "t-3", task: "Setup Database Migrations", status: "completed", priority: 2, created_at: "2026-06-24T07:00:00Z" },
-  { id: "t-4", task: "Conduct 7-day Founder Dogfooding", status: "pending", priority: 1, created_at: "2026-06-24T09:15:00Z" }
+  { id: "t-1", task: "Finish Knowledge Explorer", status: "pending", priority: 1, context_id: "ctx-1", created_at: "2026-06-24T09:00:00Z" },
+  { id: "t-2", task: "Build Executive Brief UI", status: "completed", priority: 1, context_id: "ctx-1", created_at: "2026-06-24T08:00:00Z" },
+  { id: "t-3", task: "Setup Database Migrations", status: "completed", priority: 2, context_id: "ctx-1", created_at: "2026-06-24T07:00:00Z" },
+  { id: "t-4", task: "Conduct 7-day Founder Dogfooding", status: "pending", priority: 1, context_id: "ctx-1", created_at: "2026-06-24T09:15:00Z" }
 ]
 
 const mockDeadlines: DeadlineItem[] = [
-  { id: "dl-1", title: "Benchmark Review", due_at: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), confidence: 1.0, created_at: "2026-06-24T09:30:00Z" },
-  { id: "dl-2", title: "Sprint 4 Launch", due_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), confidence: 0.95, created_at: "2026-06-24T09:40:00Z" }
+  { id: "dl-1", title: "Benchmark Review", due_at: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), confidence: 1.0, context_id: "ctx-1", created_at: "2026-06-24T09:30:00Z" },
+  { id: "dl-2", title: "Sprint 4 Launch", due_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), confidence: 0.95, context_id: "ctx-1", created_at: "2026-06-24T09:40:00Z" }
 ]
 
 const mockContexts: ContextItem[] = [
