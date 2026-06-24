@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info:
+  title: AURA API
+  version: 1.0.0
+paths:
+  /health:
+    get:
+      summary: Liveness
+  /api/v1/users/me/onboarding:
+    post:
+      summary: Submit onboarding questionnaire
+  /api/v1/conversations/{id}/messages:
+    post:
+      summary: Send message -> triggers extraction pipeline
+  /api/v1/brief/today:
+    get:
+      summary: Today's brief
+  /api/v1/benchmark/run:
+    post:
+      summary: Run eval against benchmark v1.0
