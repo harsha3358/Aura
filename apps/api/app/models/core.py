@@ -1,6 +1,6 @@
 from datetime import datetime
 import uuid
-from sqlalchemy import Column, String, Boolean, Float, Integer, ForeignKey, DateTime, Text
+from sqlalchemy import Column, String, Boolean, Float, Integer, ForeignKey, DateTime, Text, Date, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base, relationship
 from pgvector.sqlalchemy import Vector
@@ -156,3 +156,19 @@ class ContextAssignment(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     
     context = relationship("Context")
+
+class ExecutiveBrief(Base):
+    __tablename__ = "executive_briefs"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    brief_date = Column(Date, nullable=False)
+    structured_brief = Column(JSONB, nullable=False)
+    rendered_brief = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    
+    user = relationship("User")
+    
+    __table_args__ = (
+        UniqueConstraint("user_id", "brief_date", name="uq_user_brief_date"),
+    )
