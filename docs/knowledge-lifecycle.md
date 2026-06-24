@@ -1,0 +1,17 @@
+# Knowledge Lifecycle
+
+RAW MESSAGE
+    ↓
+EXTRACTION
+    ↓
+OBSERVATION
+    ↓
+FACT / DECISION
+    ↓
+HYPOTHESIS
+    ↓
+VALIDATION
+    ↓
+STRATEGY
+    ↓
+EXECUTIVE BRIEF
