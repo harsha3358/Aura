@@ -9,9 +9,9 @@
 | Ollama LLM provider | completed | d813328 | 2026-06-24 |
 | Extraction Engine | completed | d813328 | 2026-06-24 |
 | Knowledge Contract | completed | 32bf47f | 2026-06-24 |
-| Context Engine | pending | - | - |
+| Context Engine | completed | 149814a | 2026-06-24 |
 | Conversation/message API | completed | e2f90bf | 2026-06-24 |
-| Executive Brief engine + API | pending | - | - |
+| Executive Brief engine + API | completed | 3693840 | 2026-06-24 |
 | Brief UI (primary landing) | pending | - | - |
 | Onboarding wizard | pending | - | - |
 | Capture UI + extraction chips | pending | - | - |
