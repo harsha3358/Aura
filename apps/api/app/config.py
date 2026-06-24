@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_JWT_SECRET: str = ""
     DATABASE_URL: str = "postgresql+asyncpg://aura:password@127.0.0.1:5433/aura_db"
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3"
     
     class Config:
         env_file = ".env"
