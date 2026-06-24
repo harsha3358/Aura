@@ -3,19 +3,20 @@
 | Task | Status | Commit | Date |
 | --- | --- | --- | --- |
 | docs/DEVELOPMENT.md + all 16 deliverable docs | completed | - | - |
-| Monorepo scaffold (api + web + docker) | pending | - | - |
-| SQLAlchemy models + Alembic migrations | pending | - | - |
-| Supabase JWT middleware + auth pages | pending | - | - |
-| Ollama LLM provider | pending | - | - |
-| Extraction Engine | pending | - | - |
-| Knowledge Contract | pending | - | - |
+| Monorepo scaffold (api + web + docker) | completed | - | - |
+| SQLAlchemy models + Alembic migrations | completed | - | - |
+| Supabase JWT middleware + auth pages | completed | - | - |
+| Ollama LLM provider | completed | d813328 | 2026-06-24 |
+| Extraction Engine | completed | d813328 | 2026-06-24 |
+| Knowledge Contract | completed | 32bf47f | 2026-06-24 |
 | Context Engine | pending | - | - |
-| Conversation/message API | pending | - | - |
+| Conversation/message API | completed | e2f90bf | 2026-06-24 |
 | Executive Brief engine + API | pending | - | - |
 | Brief UI (primary landing) | pending | - | - |
 | Onboarding wizard | pending | - | - |
 | Capture UI + extraction chips | pending | - | - |
 | Hypothesis Engine | pending | - | - |
 | Strategy Engine | pending | - | - |
-| Benchmark v1.0 + eval pipeline | pending | - | - |
+| Benchmark v1.0 + eval pipeline | completed (v0.1) | cd117f7 | 2026-06-24 |
 | CI/CD + Railway deploy | pending | - | - |
+
