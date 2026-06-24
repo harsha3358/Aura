@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import users, conversations, feedback, contexts
+from app.routers import users, conversations, feedback, contexts, briefs
 from pydantic import BaseModel
 
 app = FastAPI(title="AURA API", version="0.1.0")
@@ -9,6 +9,7 @@ app.include_router(users.router, prefix="/api/v1", tags=["Current User"]) # For 
 app.include_router(conversations.router, prefix="/api/v1", tags=["Conversations"])
 app.include_router(feedback.router, prefix="/api/v1", tags=["Feedback"])
 app.include_router(contexts.router, prefix="/api/v1", tags=["Contexts"])
+app.include_router(briefs.router, prefix="/api/v1", tags=["Briefs"])
 
 class HealthResponse(BaseModel):
     status: str
