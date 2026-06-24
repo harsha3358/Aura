@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "apps", "api"))
 
 from app.extraction.service import ExtractionService
+from app.extraction.context import ContextClassifier
 from app.extraction.schemas import ExtractionResult
 from app.services.llm import LLMProvider
 
@@ -24,24 +25,48 @@ class MockEvaluationLLM(LLMProvider):
 
     async def generate_chat(self, messages: List[Dict[str, str]], format: Optional[str] = None) -> str:
         if not self.inject_pollution:
-            # Return expected JSON directly, wrapping metadata
             data = json.loads(self.expected_json_str)
             data["metadata"] = {"confidence": 1.0, "reasoning": "Mocked correct output"}
             return json.dumps(data)
         else:
-            # Inject a low-confidence/polluted item to test the validation layer
             data = json.loads(self.expected_json_str)
             data["metadata"] = {"confidence": 0.8, "reasoning": "Mocked polluted output"}
-            
-            # Add an item with missing confidence
             if "facts" in data and len(data["facts"]) > 0:
                 data["facts"].append({"value": "Pollution Fact", "entity": "polluted", "category": "project_detail"})
-            
-            # Add a sub-threshold item
             if "tasks" in data:
                 data["tasks"].append({"value": "Sub-threshold Task", "confidence": 0.4, "category": "development"})
-                
             return json.dumps(data)
+
+class MockContextLLM(LLMProvider):
+    """
+    Simulates Ollama context classifier responses.
+    """
+    def __init__(self, expected_context: str, inject_pollution: bool = False):
+        self.expected_context = expected_context
+        self.inject_pollution = inject_pollution
+
+    async def generate_chat(self, messages: List[Dict[str, str]], format: Optional[str] = None) -> str:
+        if not self.inject_pollution:
+            # Matches existing context
+            return json.dumps({
+                "matched_context_name": self.expected_context,
+                "shift_detected": False,
+                "new_context": None,
+                "confidence": 1.0,
+                "reasoning": "Mocked correct context classification"
+            })
+        else:
+            # Low confidence shift to incorrect context
+            return json.dumps({
+                "matched_context_name": None,
+                "shift_detected": True,
+                "new_context": {
+                    "name": "Incorrect Context",
+                    "description": "Simulated wrong context"
+                },
+                "confidence": 0.4,
+                "reasoning": "Mocked polluted context classification"
+            })
 
 def normalize(val: str) -> str:
     return str(val).lower().strip()
@@ -103,18 +128,43 @@ async def main():
     global_fp = 0
     global_fn = 0
     
+    context_matches = 0
+    total_context_runs = 0
+    
     service = ExtractionService(confidence_threshold=args.threshold)
+    classifier = ContextClassifier()
     
     for i, ex in enumerate(examples):
         message = ex["message"]
         expected = ex["expected"]
+        expected_context = ex.get("expected_context")
         
         if args.mock:
-            # Override LLM provider with mock
             mock_llm = MockEvaluationLLM(json.dumps(expected), inject_pollution=args.pollute)
             service.llm = mock_llm
             
+            mock_ctx_llm = MockContextLLM(expected_context, inject_pollution=args.pollute)
+            classifier.llm = mock_ctx_llm
+            
         try:
+            # 1. Evaluate context classification
+            from app.models.core import Context
+            mock_existing = []
+            if expected_context:
+                mock_existing.append(Context(name=expected_context, description="Mock context"))
+            
+            ctx_res = await classifier.classify(message, mock_existing)
+            matched_ctx = ctx_res.get("matched_context_name")
+            
+            if matched_ctx and expected_context and matched_ctx.lower().strip() == expected_context.lower().strip():
+                context_matches += 1
+            elif ctx_res.get("shift_detected") and ctx_res.get("new_context") and ctx_res["new_context"].get("name"):
+                new_name = ctx_res["new_context"]["name"]
+                if expected_context and new_name.lower().strip() == expected_context.lower().strip():
+                    context_matches += 1
+            total_context_runs += 1
+
+            # 2. Evaluate extraction
             actual, observations = await service.extract_from_message(message)
             run_stats = evaluate_run(expected, actual)
             global_tp += run_stats["total_tp"]
@@ -128,6 +178,7 @@ async def main():
     recall = global_tp / (global_tp + global_fn) if (global_tp + global_fn) > 0 else 0.0
     f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
     pollution_rate = global_fp / (global_tp + global_fp) if (global_tp + global_fp) > 0 else 0.0
+    context_accuracy = context_matches / total_context_runs if total_context_runs > 0 else 0.0
 
     print("\n" + "="*40)
     print("           EVALUATION SUMMARY")
@@ -136,11 +187,13 @@ async def main():
     print(f"Total True Positives (TP):  {global_tp}")
     print(f"Total False Positives (FP): {global_fp}")
     print(f"Total False Negatives (FN): {global_fn}")
+    print(f"Context Matches:            {context_matches}/{total_context_runs}")
     print("-"*40)
     print(f"Precision:                 {precision:.4f}")
     print(f"Recall:                    {recall:.4f}")
     print(f"F1 Score:                  {f1:.4f}")
     print(f"Knowledge Pollution Rate:  {pollution_rate:.4f}")
+    print(f"Context Detection Accuracy: {context_accuracy:.4f}")
     print("="*40)
 
 if __name__ == "__main__":
