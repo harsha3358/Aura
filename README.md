@@ -2,6 +2,9 @@
 
 AURA is a production-grade cognitive model application designed to capture builder conversations, extract structured knowledge (facts, decisions, tasks, deadlines), and generate high-quality daily executive briefs.
 
+## What AURA Does
+AURA is a Personal Operating System for Builders. It captures conversations, extracts structured knowledge, understands context, learns from user corrections, and generates daily executive briefings that help users remember not only what they decided, but why they decided it.
+
 ## North Star Metric
 - **Founder Dogfood Metric:** Did AURA save the founder at least 30 minutes today? (YES/NO)
 
@@ -52,7 +55,7 @@ Navigate to the API folder, activate your virtual environment, and install depen
 ```bash
 cd apps/api
 python -m venv venv
-.\venv\Scripts\activate
+.\\venv\\Scripts\\activate
 pip install -r requirements.txt
 ```
 
@@ -68,12 +71,74 @@ uvicorn app.main:app --reload
 
 ---
 
+## Validation Status
+
+* Authentication ✅
+* Onboarding ✅
+* Knowledge Capture ✅
+* Knowledge Review ✅
+* Executive Brief Generation ✅
+* Context Classification ✅
+* Founder Dogfood Tested ✅
+
+---
+
+## Product Screenshots
+
+### Screenshots
+
+#### Login
+
+![Login](./Screenshots/Login.png)
+
+#### Onboarding
+
+![Onboarding](./Screenshots/Onboarding.png)
+
+#### Dashboard
+
+![Dashboard](./Screenshots/Dashboard.png)
+
+#### Knowledge Explorer
+
+![Knowledge Explorer](./Screenshots/KnowledgeExplorer.png)
+
+#### Capture Session
+
+![Capture Session](./Screenshots/CaptureSession.png)
+
+#### Extraction Review
+
+![Extraction Chips](./Screenshots/ExtractionChips.png)
+
+#### Edit Workflow
+
+![Edit Workflow](./Screenshots/EditWorkflow.png)
+
+#### Reject Workflow
+
+![Reject Workflow](./Screenshots/RejectWorkflow.png)
+
+#### Executive Brief
+
+![Executive Brief](./Screenshots/ExecutiveBrief.png)
+
+#### Mobile View
+
+![Mobile View](./Screenshots/MobileView.png)
+
+#### Desktop View
+
+![Desktop View](./Screenshots/DesktopView.png)
+
+---
+
 ## Testing & Quality Gates
 
 Run the pytest suite to verify routers, models, and validation logic:
 ```bash
 cd apps/api
-.\venv\Scripts\activate
+.\\venv\\Scripts\\activate
 python -m pytest
 ```
 
