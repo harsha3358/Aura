@@ -82,7 +82,10 @@ async def test_add_message():
         assert response.status_code == 201
         res_data = response.json()
         assert "message" in res_data
-        assert "extraction" in res_data
+        assert "facts" in res_data
+        assert "decisions" in res_data
+        assert "tasks" in res_data
+        assert "deadlines" in res_data
         msg_data = res_data["message"]
         assert msg_data["content"] == "Hello AURA"
         assert msg_data["role"] == "user"

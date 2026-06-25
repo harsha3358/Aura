@@ -49,9 +49,51 @@ class ConversationResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class SavedFactResponse(BaseModel):
+    id: uuid.UUID
+    entity: str
+    value: str
+    confidence: float
+    review_state: str
+
+    class Config:
+        from_attributes = True
+
+class SavedDecisionResponse(BaseModel):
+    id: uuid.UUID
+    chosen_option: str
+    confidence: float
+    review_state: str
+
+    class Config:
+        from_attributes = True
+
+class SavedTaskResponse(BaseModel):
+    id: uuid.UUID
+    task: str
+    status: str
+    review_state: str
+    confidence: float
+
+    class Config:
+        from_attributes = True
+
+class SavedDeadlineResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    due_at: datetime
+    confidence: float
+    review_state: str
+
+    class Config:
+        from_attributes = True
+
 class MessagePostResponse(BaseModel):
     message: MessageResponse
-    extraction: ExtractionResult
+    facts: List[SavedFactResponse] = []
+    decisions: List[SavedDecisionResponse] = []
+    tasks: List[SavedTaskResponse] = []
+    deadlines: List[SavedDeadlineResponse] = []
 
     class Config:
         from_attributes = True
@@ -99,6 +141,17 @@ async def create_conversation(
         "created_at": conversation.created_at,
         "messages": []
     }
+
+@router.get("/conversations", response_model=List[ConversationResponse])
+async def list_conversations(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(Conversation).where(Conversation.user_id == current_user.id).order_by(Conversation.created_at.desc())
+    res = await db.execute(stmt)
+    conversations = res.scalars().all()
+    # return the conversation list. ConversationResponse expects messages list which defaults to []
+    return conversations
 
 @router.get("/conversations/{id}", response_model=ConversationResponse)
 async def get_conversation(
@@ -200,6 +253,7 @@ async def create_conversation_message(
         extraction_result, observations = await extractor.extract_from_message(payload.content)
         
         # 3. Persist valid extractions and link to active context
+        saved_facts = []
         for fact in extraction_result.facts:
             db_fact = Fact(
                 user_id=current_user.id,
@@ -207,10 +261,15 @@ async def create_conversation_message(
                 value=fact.value,
                 context_id=active_context_id,
                 source_message_id=message.id,
+                source_conversation_id=id,
+                extractor_version="v0.1",
+                review_state="pending",
                 confidence=fact.confidence
             )
             db.add(db_fact)
+            saved_facts.append(db_fact)
             
+        saved_decisions = []
         for dec in extraction_result.decisions:
             db_dec = Decision(
                 user_id=current_user.id,
@@ -218,20 +277,31 @@ async def create_conversation_message(
                 rejected_options=[],
                 context_id=active_context_id,
                 source_message_id=message.id,
+                source_conversation_id=id,
+                extractor_version="v0.1",
+                review_state="pending",
                 confidence=dec.confidence
             )
             db.add(db_dec)
+            saved_decisions.append(db_dec)
             
+        saved_tasks = []
         for tsk in extraction_result.tasks:
             db_tsk = Task(
                 user_id=current_user.id,
                 task=tsk.value,
                 status="pending",
                 context_id=active_context_id,
-                source_message_id=message.id
+                source_message_id=message.id,
+                source_conversation_id=id,
+                extractor_version="v0.1",
+                review_state="pending",
+                confidence=tsk.confidence
             )
             db.add(db_tsk)
+            saved_tasks.append(db_tsk)
             
+        saved_deadlines = []
         for dl in extraction_result.deadlines:
             due_date = parse_deadline_date(dl.value)
             db_dl = Deadline(
@@ -240,9 +310,13 @@ async def create_conversation_message(
                 due_at=due_date,
                 context_id=active_context_id,
                 source_message_id=message.id,
+                source_conversation_id=id,
+                extractor_version="v0.1",
+                review_state="pending",
                 confidence=dl.confidence
             )
             db.add(db_dl)
+            saved_deadlines.append(db_dl)
             
         for opt in extraction_result.considered_options:
             db_obs = Observation(
@@ -274,11 +348,64 @@ async def create_conversation_message(
             )
             db.add(db_obs)
             
+        await db.flush()
+        
+        # Build responses with populated database IDs
+        facts_res = [
+            {
+                "id": f.id,
+                "entity": f.entity,
+                "value": f.value,
+                "confidence": f.confidence,
+                "review_state": f.review_state
+            }
+            for f in saved_facts
+        ]
+        decisions_res = [
+            {
+                "id": d.id,
+                "chosen_option": d.chosen_option,
+                "confidence": d.confidence,
+                "review_state": d.review_state
+            }
+            for d in saved_decisions
+        ]
+        tasks_res = [
+            {
+                "id": t.id,
+                "task": t.task,
+                "status": t.status,
+                "review_state": t.review_state,
+                "confidence": t.confidence
+            }
+            for t in saved_tasks
+        ]
+        deadlines_res = [
+            {
+                "id": dl.id,
+                "title": dl.title,
+                "due_at": dl.due_at,
+                "confidence": dl.confidence,
+                "review_state": dl.review_state
+            }
+            for dl in saved_deadlines
+        ]
+        
+        await db.commit()
+
+    else:
+        facts_res = []
+        decisions_res = []
+        tasks_res = []
+        deadlines_res = []
         await db.commit()
 
     return {
         "message": message,
-        "extraction": extraction_result
+        "facts": facts_res,
+        "decisions": decisions_res,
+        "tasks": tasks_res,
+        "deadlines": deadlines_res
     }
 
 @router.post("/messages", response_model=MessagePostResponse, status_code=status.HTTP_201_CREATED)

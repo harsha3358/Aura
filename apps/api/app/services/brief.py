@@ -23,19 +23,31 @@ class BriefingService:
         proj_res = await self.db.execute(proj_stmt)
         projects = proj_res.scalars().all()
         
-        # 3. Gather open tasks
-        task_stmt = select(Task).where(Task.user_id == user.id, Task.status != "completed").order_by(Task.created_at.desc())
+        # 3. Gather open tasks (excluding completed and rejected)
+        task_stmt = select(Task).where(
+            Task.user_id == user.id, 
+            Task.status != "completed",
+            Task.review_state != "rejected"
+        ).order_by(Task.created_at.desc())
         task_res = await self.db.execute(task_stmt)
         tasks = task_res.scalars().all()
         
-        # 4. Gather upcoming deadlines
-        deadline_stmt = select(Deadline).where(Deadline.user_id == user.id, Deadline.due_at >= datetime.utcnow()).order_by(Deadline.due_at.asc())
+        # 4. Gather upcoming deadlines (excluding rejected)
+        deadline_stmt = select(Deadline).where(
+            Deadline.user_id == user.id, 
+            Deadline.due_at >= datetime.utcnow(),
+            Deadline.review_state != "rejected"
+        ).order_by(Deadline.due_at.asc())
         dl_res = await self.db.execute(deadline_stmt)
         deadlines = dl_res.scalars().all()
         
-        # 5. Gather recent decisions (created in last 48 hours)
+        # 5. Gather recent decisions (created in last 48 hours, excluding rejected)
         since_date = datetime.utcnow() - timedelta(hours=48)
-        dec_stmt = select(Decision).where(Decision.user_id == user.id, Decision.created_at >= since_date).order_by(Decision.created_at.desc())
+        dec_stmt = select(Decision).where(
+            Decision.user_id == user.id, 
+            Decision.created_at >= since_date,
+            Decision.review_state != "rejected"
+        ).order_by(Decision.created_at.desc())
         dec_res = await self.db.execute(dec_stmt)
         decisions = dec_res.scalars().all()
 
