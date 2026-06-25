@@ -17,12 +17,45 @@ function App() {
     createContext,
     fetchBriefToday,
     fetchKnowledge,
-    submitBriefFeedback
+    submitBriefFeedback,
+    submitOnboarding,
+    conversations,
+    activeConversationId,
+    fetchConversations,
+    createConversation,
+    sendMessage,
+    approveKnowledgeItem,
+    rejectKnowledgeItem,
+    updateKnowledgeItem,
+    fetchUser
   } = useAuraStore()
 
-  const [currentView, setCurrentView] = useState<'dashboard' | 'explorer'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'explorer' | 'capture'>('dashboard')
   const [showRawBrief, setShowRawBrief] = useState(false)
   
+  // Onboarding Wizard State
+  const [onboardingStep, setOnboardingStep] = useState(1)
+  const [onboardingName, setOnboardingName] = useState('')
+  const [onboardingTimezone, setOnboardingTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
+  const [onboardingBuilding, setOnboardingBuilding] = useState('')
+  const [onboardingGoals, setOnboardingGoals] = useState(['', '', ''])
+  const [onboardingChallenges, setOnboardingChallenges] = useState(['', '', ''])
+  const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false)
+
+  // Capture Session / Chat State
+  const [chatInput, setChatInput] = useState('')
+  const [isSendingMessage, setIsSendingMessage] = useState(false)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editingItemText, setEditingItemText] = useState('')
+  const [rejectingItemId, setRejectingItemId] = useState<string | null>(null)
+
+  // Sync display name when user loads
+  useEffect(() => {
+    if (user?.display_name) {
+      setOnboardingName(user.display_name)
+    }
+  }, [user])
+
   // Founder Feedback State
   const [feedbackRating, setFeedbackRating] = useState<'useful' | 'neutral' | 'not_useful' | null>(null)
   const [feedbackComment, setFeedbackComment] = useState('')
@@ -51,10 +84,12 @@ function App() {
   // Load initial data on mount/auth change
   useEffect(() => {
     if (isAuthenticated) {
+      fetchUser()
       fetchBriefToday()
       fetchKnowledge()
+      fetchConversations()
     }
-  }, [isAuthenticated, fetchBriefToday, fetchKnowledge])
+  }, [isAuthenticated, fetchUser, fetchBriefToday, fetchKnowledge, fetchConversations])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -112,7 +147,8 @@ function App() {
   // Navigation Items
   const navItems = [
     { id: 'dashboard', label: 'Dashboard' },
-    { id: 'explorer', label: 'Knowledge Explorer' }
+    { id: 'explorer', label: 'Knowledge Explorer' },
+    { id: 'capture', label: 'Capture Session' }
   ]
 
   // KPI Calculations
@@ -184,6 +220,420 @@ function App() {
             </span>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  // If authenticated but user profile is not loaded, show Loading
+  if (isAuthenticated && !user) {
+    return (
+      <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] flex flex-col items-center justify-center font-sans">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#a78bfa] border-t-transparent"></div>
+          <p className="text-sm text-[#71717a] animate-pulse">Initializing AURA...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // If onboarding is not completed, force Onboarding Wizard
+  if (isAuthenticated && user && !user.onboarding_completed) {
+    return (
+      <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] flex items-center justify-center p-6 font-sans">
+        <div className="w-full max-w-lg bg-[#0c0c0e] border border-[#1e1e24] rounded-xl p-8 shadow-2xl relative overflow-hidden space-y-6">
+          {/* Top aesthetic color bar */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent opacity-60"></div>
+          
+          {/* Progress Header */}
+          <div className="flex items-center justify-between border-b border-[#1e1e24] pb-4">
+            <div>
+              <h1 className="text-xl font-bold text-white">Initialize AURA</h1>
+              <p className="text-xs text-[#71717a] mt-0.5 font-medium">Let's set up your workspace</p>
+            </div>
+            <span className="text-xs font-semibold bg-[#18181b] border border-[#27272a] px-2.5 py-1 rounded text-[#a78bfa]">
+              Step {onboardingStep} of 4
+            </span>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="w-full bg-[#18181b] h-1 rounded-full overflow-hidden">
+            <div 
+              className="bg-[#a78bfa] h-full transition-all duration-300"
+              style={{ width: `${(onboardingStep / 4) * 100}%` }}
+            ></div>
+          </div>
+
+          {/* Wizard Steps */}
+          <div className="min-h-[220px]">
+            {onboardingStep === 1 && (
+              <div className="space-y-4 animate-fade-in">
+                <div>
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">Step 1: Your Profile</h3>
+                  <p className="text-xs text-[#71717a]">AURA adapts to your schedule and name.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Display Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={onboardingName}
+                    onChange={(e) => setOnboardingName(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-sm text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all"
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Timezone</label>
+                  <input
+                    type="text"
+                    required
+                    value={onboardingTimezone}
+                    onChange={(e) => setOnboardingTimezone(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-sm text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all"
+                    placeholder="e.g. Asia/Kolkata, UTC"
+                  />
+                </div>
+              </div>
+            )}
+
+            {onboardingStep === 2 && (
+              <div className="space-y-4 animate-fade-in">
+                <div>
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">Step 2: Project Scope</h3>
+                  <p className="text-xs text-[#71717a]">What is the primary focus of your current project?</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">What are you building?</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={onboardingBuilding}
+                    onChange={(e) => setOnboardingBuilding(e.target.value)}
+                    className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-sm text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all resize-none"
+                    placeholder="Describe your project, product, or company in a sentence or two..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {onboardingStep === 3 && (
+              <div className="space-y-4 animate-fade-in">
+                <div>
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">Step 3: Immediate Targets</h3>
+                  <p className="text-xs text-[#71717a]">Define your top 3 goals. These will map to AURA tasks.</p>
+                </div>
+                <div className="space-y-3">
+                  {onboardingGoals.map((goal, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <label className="text-[10px] font-semibold text-[#71717a] uppercase tracking-wider">Goal #{idx + 1}</label>
+                      <input
+                        type="text"
+                        required
+                        value={goal}
+                        onChange={(e) => {
+                          const newGoals = [...onboardingGoals]
+                          newGoals[idx] = e.target.value
+                          setOnboardingGoals(newGoals)
+                        }}
+                        className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-sm text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all"
+                        placeholder={`Goal description...`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {onboardingStep === 4 && (
+              <div className="space-y-4 animate-fade-in">
+                <div>
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">Step 4: Key Challenges</h3>
+                  <p className="text-xs text-[#71717a]">What obstacles are you currently navigating? These map to observations.</p>
+                </div>
+                <div className="space-y-3">
+                  {onboardingChallenges.map((challenge, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <label className="text-[10px] font-semibold text-[#71717a] uppercase tracking-wider">Challenge #{idx + 1}</label>
+                      <input
+                        type="text"
+                        required
+                        value={challenge}
+                        onChange={(e) => {
+                          const newChallenges = [...onboardingChallenges]
+                          newChallenges[idx] = e.target.value
+                          setOnboardingChallenges(newChallenges)
+                        }}
+                        className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-sm text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all"
+                        placeholder={`Challenge description...`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between border-t border-[#1e1e24] pt-4 mt-6">
+            <button
+              type="button"
+              disabled={onboardingStep === 1 || isOnboardingSubmitting}
+              onClick={() => setOnboardingStep(prev => prev - 1)}
+              className="px-4 py-2 bg-[#121215] hover:bg-[#18181b] border border-[#1e1e24] text-[#a1a1aa] hover:text-white rounded-lg text-sm transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer font-medium"
+            >
+              Back
+            </button>
+
+            {onboardingStep < 4 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onboardingStep === 1 && (!onboardingName.trim() || !onboardingTimezone.trim())) return
+                  if (onboardingStep === 2 && !onboardingBuilding.trim()) return
+                  if (onboardingStep === 3 && onboardingGoals.some(g => !g.trim())) return
+                  setOnboardingStep(prev => prev + 1)
+                }}
+                className="px-5 py-2 bg-white hover:bg-zinc-100 text-zinc-950 font-medium rounded-lg text-sm transition-all cursor-pointer"
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={isOnboardingSubmitting || onboardingChallenges.some(c => !c.trim())}
+                onClick={async () => {
+                  setIsOnboardingSubmitting(true)
+                  const success = await submitOnboarding(
+                    onboardingName,
+                    onboardingTimezone,
+                    onboardingBuilding,
+                    onboardingGoals,
+                    onboardingChallenges
+                  )
+                  setIsOnboardingSubmitting(false)
+                  if (success) {
+                    setCurrentView('dashboard')
+                  }
+                }}
+                className="px-5 py-2 bg-[#a78bfa] hover:bg-[#906ffa] text-white font-medium rounded-lg text-sm transition-all disabled:opacity-55 cursor-pointer"
+              >
+                {isOnboardingSubmitting ? "Configuring workspace..." : "Initialize workspace"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const getChipStyle = (type: string, state: string) => {
+    if (state === 'rejected') {
+      return {
+        bg: 'bg-zinc-900 border-zinc-800 text-[#71717a]',
+        badge: 'bg-zinc-850 border-zinc-800 text-[#71717a]',
+        label: 'REJECTED'
+      }
+    }
+    switch (type) {
+      case 'fact':
+        return {
+          bg: 'bg-[rgba(167,139,250,0.06)] border-[#a78bfa]/20 text-[#e4e4e7]',
+          badge: 'bg-[rgba(167,139,250,0.15)] border-[#a78bfa]/30 text-[#a78bfa]',
+          label: 'FACT'
+        }
+      case 'decision':
+        return {
+          bg: 'bg-[rgba(59,130,246,0.06)] border-[#60a5fa]/20 text-[#e4e4e7]',
+          badge: 'bg-[rgba(59,130,246,0.15)] border-[#60a5fa]/30 text-[#60a5fa]',
+          label: 'DECISION'
+        }
+      case 'task':
+        return {
+          bg: 'bg-[rgba(249,115,22,0.06)] border-[#fb923c]/20 text-[#e4e4e7]',
+          badge: 'bg-[rgba(249,115,22,0.15)] border-[#fb923c]/30 text-[#fb923c]',
+          label: 'TASK'
+        }
+      case 'deadline':
+        return {
+          bg: 'bg-[rgba(239,68,68,0.06)] border-[#f87171]/20 text-[#e4e4e7]',
+          badge: 'bg-[rgba(239,68,68,0.15)] border-[#f87171]/30 text-[#f87171]',
+          label: 'DEADLINE'
+        }
+      default:
+        return {
+          bg: 'bg-zinc-900 border-zinc-800 text-[#e4e4e7]',
+          badge: 'bg-zinc-800 border-zinc-700 text-[#71717a]',
+          label: 'UNKNOWN'
+        }
+    }
+  }
+
+  const renderReviewChip = (
+    type: 'fact' | 'decision' | 'task' | 'deadline',
+    item: any,
+    messageId: string
+  ) => {
+    const style = getChipStyle(type, item.review_state)
+    const isEditing = editingItemId === item.id
+    const isRejecting = rejectingItemId === item.id
+
+    // Get primary text of entity
+    const getPrimaryText = () => {
+      if (type === 'fact') return `${item.entity}: ${item.value}`
+      if (type === 'decision') return item.chosen_option
+      if (type === 'task') return item.task
+      return item.title
+    }
+
+    const getRawTextForEditing = () => {
+      if (type === 'fact') return item.value
+      if (type === 'decision') return item.chosen_option
+      if (type === 'task') return item.task
+      return item.title
+    }
+
+    return (
+      <div 
+        key={item.id}
+        className={`flex flex-col md:flex-row items-start md:items-center gap-2 px-3 py-1.5 rounded-lg border text-xs transition-all max-w-full ${style.bg}`}
+      >
+        {isEditing ? (
+          <div className="flex items-center gap-2 w-full">
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider shrink-0 ${style.badge}`}>
+              EDITING
+            </span>
+            <input
+              type="text"
+              value={editingItemText}
+              onChange={(e) => setEditingItemText(e.target.value)}
+              className="flex-grow px-2 py-1 bg-[#060608] border border-[#1e1e24] rounded text-xs text-white focus:outline-none focus:border-[#a78bfa] min-w-[200px]"
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                const payload: any = {}
+                if (type === 'fact') payload.value = editingItemText
+                else if (type === 'decision') payload.chosen_option = editingItemText
+                else if (type === 'task') payload.task = editingItemText
+                else payload.title = editingItemText
+
+                await updateKnowledgeItem(type, item.id, payload, messageId)
+                setEditingItemId(null)
+              }}
+              className="px-2 py-1 bg-[#10b981] hover:bg-[#059669] text-white rounded text-[10px] font-semibold cursor-pointer"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingItemId(null)}
+              className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-[#a1a1aa] rounded text-[10px] font-semibold cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : isRejecting ? (
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-2 w-full">
+            <span className="text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wider shrink-0">
+              Why reject?
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {['Wrong Type', 'Wrong Value', 'Incomplete', 'Hallucinated', 'Duplicate'].map(reason => (
+                <button
+                  type="button"
+                  key={reason}
+                  onClick={async () => {
+                    await rejectKnowledgeItem(type, item.id, reason, messageId)
+                    setRejectingItemId(null)
+                  }}
+                  className="px-2 py-0.5 bg-[#ef4444]/10 hover:bg-[#ef4444]/25 text-[#f87171] border border-[#ef4444]/20 rounded text-[10px] transition-all cursor-pointer font-medium"
+                >
+                  {reason}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setRejectingItemId(null)}
+                className="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-[#a1a1aa] rounded text-[10px] cursor-pointer font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-1.5 min-w-0 max-w-full">
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider shrink-0 ${style.badge}`}>
+                {style.label}
+              </span>
+              <span className={`truncate max-w-[280px] md:max-w-[400px] text-[#e4e4e7] ${item.review_state === 'rejected' ? 'line-through opacity-50' : ''}`}>
+                {getPrimaryText()}
+              </span>
+              {type === 'deadline' && item.due_at && (
+                <span className="text-[10px] text-[#71717a] shrink-0 font-mono">
+                  (due {new Date(item.due_at).toLocaleDateString()})
+                </span>
+              )}
+            </div>
+
+            {/* Actions / Status badges */}
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto md:ml-0 border-t md:border-t-0 border-[#1e1e24] pt-1.5 md:pt-0 w-full md:w-auto justify-end">
+              {item.review_state === 'approved' && (
+                <span className="text-[#10b981] font-semibold text-[10px] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20 flex items-center gap-1">
+                  ✓ Approved
+                </span>
+              )}
+              {item.review_state === 'edited' && (
+                <span className="text-[#f59e0b] font-semibold text-[10px] bg-[#f59e0b]/10 px-2 py-0.5 rounded border border-[#f59e0b]/20">
+                  Edited
+                </span>
+              )}
+              {item.review_state === 'rejected' && (
+                <span className="text-[#ef4444] font-semibold text-[10px] bg-[#ef4444]/10 px-2 py-0.5 rounded border border-[#ef4444]/20">
+                  Rejected
+                </span>
+              )}
+
+              {/* Action Buttons (Only show for pending or edited, or allow re-action if not rejected) */}
+              {item.review_state !== 'rejected' && item.review_state !== 'approved' && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await approveKnowledgeItem(type, item.id)
+                    }}
+                    className="p-1 bg-[#10b981]/10 hover:bg-[#10b981]/25 border border-[#10b981]/20 rounded text-[#10b981] text-[10px] transition-all cursor-pointer font-bold flex items-center justify-center h-5 w-5 animate-fade-in"
+                    title="Approve"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingItemId(item.id)
+                      setEditingItemText(getRawTextForEditing())
+                    }}
+                    className="p-1 bg-[#f59e0b]/10 hover:bg-[#f59e0b]/25 border border-[#f59e0b]/20 rounded text-[#f59e0b] text-[10px] transition-all cursor-pointer font-bold flex items-center justify-center h-5 w-5 animate-fade-in"
+                    title="Edit"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRejectingItemId(item.id)
+                    }}
+                    className="p-1 bg-[#ef4444]/10 hover:bg-[#ef4444]/25 border border-[#ef4444]/20 rounded text-[#ef4444] text-[10px] transition-all cursor-pointer font-bold flex items-center justify-center h-5 w-5 animate-fade-in"
+                    title="Reject"
+                  >
+                    ✗
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     )
   }
@@ -799,6 +1249,190 @@ function App() {
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Capture Session View */}
+        {currentView === 'capture' && (
+          <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-10rem)] animate-fade-in">
+            {/* Left Panel: Sessions list */}
+            <div className="w-full md:w-80 bg-[#0c0c0e] border border-[#1e1e24] rounded-lg p-4 flex flex-col justify-between shrink-0">
+              <div className="space-y-4 flex-grow flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between border-b border-[#1e1e24] pb-3">
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Capture Sessions</h3>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const newId = await createConversation("New Session")
+                      if (newId) {
+                        useAuraStore.setState({ activeConversationId: newId })
+                      }
+                    }}
+                    className="flex items-center space-x-1 px-2.5 py-1 bg-[#1e1e24] hover:bg-[#2e2e33] border border-[#2d2d34] rounded text-xs text-white transition-all cursor-pointer font-medium"
+                  >
+                    <span>+ New</span>
+                  </button>
+                </div>
+
+                {/* Session list scrollable */}
+                <div className="flex-grow overflow-y-auto space-y-1.5 pr-1">
+                  {conversations.length === 0 ? (
+                    <div className="text-center py-8 text-[#71717a] text-xs">
+                      No capture sessions found.
+                    </div>
+                  ) : (
+                    conversations.map(conv => {
+                      const isActive = conv.id === activeConversationId
+                      const lastMsg = conv.messages?.[conv.messages.length - 1]?.content || "No messages yet"
+                      return (
+                        <button
+                          type="button"
+                          key={conv.id}
+                          onClick={() => useAuraStore.setState({ activeConversationId: conv.id })}
+                          className={`w-full text-left p-3 rounded-lg border transition-all cursor-pointer flex flex-col space-y-1.5 ${
+                            isActive 
+                              ? 'bg-[#18181b] border-[#a78bfa]/50 text-white' 
+                              : 'bg-[#060608] border-[#1e1e24] text-[#a1a1aa] hover:border-[#1e1e24]/80 hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-xs font-semibold truncate max-w-[150px]">{conv.title || "Capture Session"}</span>
+                            <span className="text-[10px] text-[#71717a]">
+                              {new Date(conv.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#71717a] truncate w-full">{lastMsg}</p>
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Panel: Chat and reviews */}
+            <div className="flex-grow bg-[#0c0c0e] border border-[#1e1e24] rounded-lg flex flex-col overflow-hidden">
+              {activeConversationId ? (
+                (() => {
+                  const currentConv = conversations.find(c => c.id === activeConversationId)
+                  if (!currentConv) return (
+                    <div className="flex-grow flex items-center justify-center text-[#71717a] text-sm">
+                      Session not found
+                    </div>
+                  )
+                  
+                  return (
+                    <div className="flex flex-col h-full overflow-hidden">
+                      {/* Active Session Header */}
+                      <div className="border-b border-[#1e1e24] bg-[#0e0e11] px-6 py-4 flex items-center justify-between">
+                        <span className="text-sm font-semibold tracking-tight text-white uppercase tracking-wider">
+                          {currentConv.title || "Active Session"}
+                        </span>
+                        <span className="text-[10px] bg-[#18181b] border border-[#27272a] text-[#71717a] px-2 py-0.5 rounded">
+                          ID: {currentConv.id.substring(0, 8)}
+                        </span>
+                      </div>
+
+                      {/* Chat Messages Panel */}
+                      <div className="flex-grow overflow-y-auto p-6 space-y-4">
+                        {currentConv.messages && currentConv.messages.length === 0 ? (
+                          <div className="h-full flex flex-col items-center justify-center text-center space-y-2">
+                            <span className="text-2xl">🧠</span>
+                            <p className="text-sm font-medium text-white">Record your thoughts</p>
+                            <p className="text-xs text-[#71717a] max-w-xs">
+                              Type decisions, deadlines, tasks, or facts. AURA will automatically extract knowledge with source provenance.
+                            </p>
+                          </div>
+                        ) : (
+                          currentConv.messages?.map(msg => (
+                            <div 
+                              key={msg.id} 
+                              className={`flex flex-col space-y-2 max-w-[85%] ${
+                                msg.role === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'
+                              }`}
+                            >
+                              <div className={`p-4 rounded-xl border text-sm leading-relaxed ${
+                                msg.role === 'user'
+                                  ? 'bg-[#121215] border-[#1e1e24] text-white'
+                                  : 'bg-[#09090b] border-[#1e1e24]/40 text-[#d4d4d8]'
+                              }`}>
+                                {msg.content}
+                              </div>
+                              <span className="text-[10px] text-[#52525b] px-1">
+                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+
+                              {/* Render Review Chips for User Messages */}
+                              {msg.role === 'user' && (
+                                <div className="flex flex-wrap gap-2 justify-end mt-1 max-w-full">
+                                  {msg.facts?.map(item => renderReviewChip('fact', item, msg.id))}
+                                  {msg.decisions?.map(item => renderReviewChip('decision', item, msg.id))}
+                                  {msg.tasks?.map(item => renderReviewChip('task', item, msg.id))}
+                                  {msg.deadlines?.map(item => renderReviewChip('deadline', item, msg.id))}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Message Input Bar */}
+                      <div className="border-t border-[#1e1e24] bg-[#0c0c0e] p-4">
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault()
+                            if (!chatInput.trim() || isSendingMessage) return
+                            setIsSendingMessage(true)
+                            await sendMessage(activeConversationId, chatInput.trim())
+                            setChatInput('')
+                            setIsSendingMessage(false)
+                          }}
+                          className="flex items-center space-x-2"
+                        >
+                          <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            disabled={isSendingMessage}
+                            placeholder="Type what you decided, what's due, or a new fact..."
+                            className="flex-grow px-4 py-2.5 bg-[#060608] border border-[#1e1e24] rounded-lg text-sm text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all"
+                          />
+                          <button
+                            type="submit"
+                            disabled={isSendingMessage || !chatInput.trim()}
+                            className="px-4 py-2.5 bg-[#a78bfa] hover:bg-[#906ffa] text-white font-medium rounded-lg text-sm transition-all disabled:opacity-55 cursor-pointer shrink-0 font-semibold"
+                          >
+                            {isSendingMessage ? "Sending..." : "Send"}
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  )
+                })()
+              ) : (
+                <div className="flex-grow flex flex-col items-center justify-center text-center p-6 space-y-4">
+                  <div className="h-12 w-12 rounded-full bg-[#18181b] border border-[#27272a] flex items-center justify-center text-xl">
+                    💬
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-white">No active capture session</h4>
+                    <p className="text-xs text-[#71717a] mt-1 max-w-sm">Select an existing session from the left panel, or start a new capture session to begin.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const newId = await createConversation("New Session")
+                      if (newId) {
+                        useAuraStore.setState({ activeConversationId: newId })
+                      }
+                    }}
+                    className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-950 font-medium rounded-lg text-sm transition-all cursor-pointer"
+                  >
+                    Start New Session
+                  </button>
                 </div>
               )}
             </div>
