@@ -74,6 +74,9 @@ class Fact(Base):
     context_id = Column(UUID(as_uuid=True), ForeignKey("contexts.id"))
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"))
     source_message_id = Column(UUID(as_uuid=True), ForeignKey("messages.id"))
+    source_conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id"), nullable=True)
+    extractor_version = Column(String, default="v0.1")
+    review_state = Column(String, default="pending")
     confidence = Column(Float, nullable=False)
     embedding = Column(Vector(768))
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
@@ -90,6 +93,9 @@ class Decision(Base):
     context_id = Column(UUID(as_uuid=True), ForeignKey("contexts.id"))
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"))
     source_message_id = Column(UUID(as_uuid=True), ForeignKey("messages.id"))
+    source_conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id"), nullable=True)
+    extractor_version = Column(String, default="v0.1")
+    review_state = Column(String, default="pending")
     confidence = Column(Float, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
@@ -105,6 +111,10 @@ class Task(Base):
     context_id = Column(UUID(as_uuid=True), ForeignKey("contexts.id"))
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"))
     source_message_id = Column(UUID(as_uuid=True), ForeignKey("messages.id"))
+    source_conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id"), nullable=True)
+    extractor_version = Column(String, default="v0.1")
+    review_state = Column(String, default="pending")
+    confidence = Column(Float, default=1.0)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -118,6 +128,9 @@ class Deadline(Base):
     context_id = Column(UUID(as_uuid=True), ForeignKey("contexts.id"))
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"))
     source_message_id = Column(UUID(as_uuid=True), ForeignKey("messages.id"))
+    source_conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id"), nullable=True)
+    extractor_version = Column(String, default="v0.1")
+    review_state = Column(String, default="pending")
     confidence = Column(Float)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
@@ -186,3 +199,16 @@ class BriefFeedback(Base):
     
     user = relationship("User")
     brief = relationship("ExecutiveBrief", back_populates="feedbacks")
+
+class KnowledgeReview(Base):
+    __tablename__ = "knowledge_reviews"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    entity_type = Column(String, nullable=False) # 'fact', 'decision', 'task', 'deadline'
+    entity_id = Column(UUID(as_uuid=True), nullable=False)
+    review_type = Column(String, nullable=False) # 'incorrect', 'partial'
+    rejection_reason = Column(String) # 'Wrong Type', 'Wrong Value', 'Incomplete', 'Hallucinated', 'Duplicate'
+    reviewer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    
+    reviewer = relationship("User")
