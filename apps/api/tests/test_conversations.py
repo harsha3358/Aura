@@ -119,3 +119,77 @@ async def test_submit_feedback():
         assert fb_data["extraction_run_id"] == msg_id
         assert fb_data["feedback_type"] == "correct"
         assert fb_data["comment"] == "Perfect extraction"
+
+@pytest.mark.anyio
+async def test_list_conversations():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        await ac.post("/api/v1/conversations", json={"title": "List Chat"})
+        
+        response = await ac.get("/api/v1/conversations")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 1
+        assert any(c["title"] == "List Chat" for c in data)
+
+from app.extraction.schemas import FactItem, DecisionItem, TaskItem, DeadlineItem
+from app.extraction.contract import Fact as FactEnum, Decision as DecisionEnum, Task as TaskEnum, Deadline as DeadlineEnum
+
+class PopulatedMockExtractionService:
+    async def extract_from_message(self, message: str):
+        return ExtractionResult(
+            facts=[FactItem(value="AURA Platform", entity="project", confidence=0.95, category=FactEnum.PROJECT_DETAIL)],
+            decisions=[DecisionItem(value="PostgreSQL", entity="database", confidence=0.90, category=DecisionEnum.TECHNOLOGY)],
+            considered_options=[],
+            tasks=[TaskItem(value="Test Sprint 5", entity="tests", confidence=0.85, category=TaskEnum.TESTING)],
+            deadlines=[DeadlineItem(value="Friday", entity="milestone", confidence=0.80, category=DeadlineEnum.MILESTONE)],
+            contexts=[],
+            metadata={"confidence": 1.0, "reasoning": "Mocked populated extraction"}
+        ), []
+
+@pytest.mark.anyio
+async def test_knowledge_review_workflow():
+    app.dependency_overrides[get_extraction_service] = lambda: PopulatedMockExtractionService()
+    
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        conv_resp = await ac.post("/api/v1/conversations", json={"title": "Review Chat"})
+        conv_id = conv_resp.json()["id"]
+        
+        msg_resp = await ac.post(f"/api/v1/conversations/{conv_id}/messages", json={
+            "content": "I am building AURA using PostgreSQL by Friday",
+            "role": "user"
+        })
+        assert msg_resp.status_code == 201
+        res_data = msg_resp.json()
+        assert len(res_data["facts"]) == 1
+        assert len(res_data["decisions"]) == 1
+        
+        fact_id = res_data["facts"][0]["id"]
+        dec_id = res_data["decisions"][0]["id"]
+        task_id = res_data["tasks"][0]["id"]
+        
+        # 1. Approve a Fact
+        app_resp = await ac.post(f"/api/v1/facts/{fact_id}/approve")
+        assert app_resp.status_code == 200
+        assert app_resp.json()["review_state"] == "approved"
+        
+        # 2. Reject a Decision
+        rej_resp = await ac.post(f"/api/v1/decisions/{dec_id}/reject", json={
+            "reason": "Wrong Type",
+            "message_id": res_data["message"]["id"]
+        })
+        assert rej_resp.status_code == 200
+        assert rej_resp.json()["review_state"] == "rejected"
+        
+        # 3. Edit a Task
+        edit_resp = await ac.patch(f"/api/v1/tasks/{task_id}", json={
+            "task": "Test Sprint 5 Completed",
+            "message_id": res_data["message"]["id"]
+        })
+        assert edit_resp.status_code == 200
+        assert edit_resp.json()["task"] == "Test Sprint 5 Completed"
+        assert edit_resp.json()["review_state"] == "edited"
+
+    app.dependency_overrides[get_extraction_service] = mock_get_extraction_service
+
