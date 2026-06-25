@@ -38,13 +38,27 @@ class MessageResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class MessageDetailResponse(BaseModel):
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    role: str
+    content: str
+    created_at: datetime
+    facts: List["SavedFactResponse"] = []
+    decisions: List["SavedDecisionResponse"] = []
+    tasks: List["SavedTaskResponse"] = []
+    deadlines: List["SavedDeadlineResponse"] = []
+
+    class Config:
+        from_attributes = True
+
 class ConversationResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     title: Optional[str]
     context_id: Optional[uuid.UUID] = None
     created_at: datetime
-    messages: List[MessageResponse] = []
+    messages: List[MessageDetailResponse] = []
 
     class Config:
         from_attributes = True
@@ -150,8 +164,53 @@ async def list_conversations(
     stmt = select(Conversation).where(Conversation.user_id == current_user.id).order_by(Conversation.created_at.desc())
     res = await db.execute(stmt)
     conversations = res.scalars().all()
-    # return the conversation list. ConversationResponse expects messages list which defaults to []
-    return conversations
+    
+    results = []
+    for conv in conversations:
+        msg_stmt = select(Message).where(Message.conversation_id == conv.id).order_by(Message.created_at.asc())
+        msg_result = await db.execute(msg_stmt)
+        messages = msg_result.scalars().all()
+        
+        msg_details = []
+        for msg in messages:
+            facts_stmt = select(Fact).where(Fact.source_message_id == msg.id)
+            facts_res = await db.execute(facts_stmt)
+            facts = facts_res.scalars().all()
+            
+            dec_stmt = select(Decision).where(Decision.source_message_id == msg.id)
+            dec_res = await db.execute(dec_stmt)
+            decisions = dec_res.scalars().all()
+            
+            tasks_stmt = select(Task).where(Task.source_message_id == msg.id)
+            tasks_res = await db.execute(tasks_stmt)
+            tasks = tasks_res.scalars().all()
+            
+            deadlines_stmt = select(Deadline).where(Deadline.source_message_id == msg.id)
+            deadlines_res = await db.execute(deadlines_stmt)
+            deadlines = deadlines_res.scalars().all()
+            
+            msg_details.append({
+                "id": msg.id,
+                "conversation_id": msg.conversation_id,
+                "role": msg.role,
+                "content": msg.content,
+                "created_at": msg.created_at,
+                "facts": facts,
+                "decisions": decisions,
+                "tasks": tasks,
+                "deadlines": deadlines
+            })
+            
+        results.append({
+            "id": conv.id,
+            "user_id": conv.user_id,
+            "title": conv.title,
+            "context_id": conv.context_id,
+            "created_at": conv.created_at,
+            "messages": msg_details
+        })
+        
+    return results
 
 @router.get("/conversations/{id}", response_model=ConversationResponse)
 async def get_conversation(
@@ -169,13 +228,43 @@ async def get_conversation(
     msg_result = await db.execute(msg_stmt)
     messages = msg_result.scalars().all()
     
+    msg_details = []
+    for msg in messages:
+        facts_stmt = select(Fact).where(Fact.source_message_id == msg.id)
+        facts_res = await db.execute(facts_stmt)
+        facts = facts_res.scalars().all()
+        
+        dec_stmt = select(Decision).where(Decision.source_message_id == msg.id)
+        dec_res = await db.execute(dec_stmt)
+        decisions = dec_res.scalars().all()
+        
+        tasks_stmt = select(Task).where(Task.source_message_id == msg.id)
+        tasks_res = await db.execute(tasks_stmt)
+        tasks = tasks_res.scalars().all()
+        
+        deadlines_stmt = select(Deadline).where(Deadline.source_message_id == msg.id)
+        deadlines_res = await db.execute(deadlines_stmt)
+        deadlines = deadlines_res.scalars().all()
+        
+        msg_details.append({
+            "id": msg.id,
+            "conversation_id": msg.conversation_id,
+            "role": msg.role,
+            "content": msg.content,
+            "created_at": msg.created_at,
+            "facts": facts,
+            "decisions": decisions,
+            "tasks": tasks,
+            "deadlines": deadlines
+        })
+    
     return {
         "id": conversation.id,
         "user_id": conversation.user_id,
         "title": conversation.title,
         "context_id": conversation.context_id,
         "created_at": conversation.created_at,
-        "messages": messages
+        "messages": msg_details
     }
 
 @router.post("/conversations/{id}/messages", response_model=MessagePostResponse, status_code=status.HTTP_201_CREATED)

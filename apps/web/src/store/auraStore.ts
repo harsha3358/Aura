@@ -13,6 +13,7 @@ export interface FactItem {
   entity: string
   value: string
   confidence: number
+  review_state: string
   category?: string
   context_id?: string
   project_id?: string
@@ -23,6 +24,7 @@ export interface DecisionItem {
   id: string
   chosen_option: string
   confidence: number
+  review_state: string
   context_id?: string
   project_id?: string
   created_at: string
@@ -33,6 +35,8 @@ export interface TaskItem {
   task: string
   status: string
   priority: number
+  review_state: string
+  confidence: number
   context_id?: string
   project_id?: string
   created_at: string
@@ -43,6 +47,7 @@ export interface DeadlineItem {
   title: string
   due_at: string
   confidence: number
+  review_state: string
   context_id?: string
   project_id?: string
   created_at: string
@@ -75,6 +80,26 @@ export interface ExecutiveBrief {
   created_at: string
 }
 
+export interface MessageItem {
+  id: string
+  conversation_id: string
+  role: 'user' | 'assistant'
+  content: string
+  created_at: string
+  facts?: FactItem[]
+  decisions?: DecisionItem[]
+  tasks?: TaskItem[]
+  deadlines?: DeadlineItem[]
+}
+
+export interface ConversationItem {
+  id: string
+  title: string
+  context_id?: string
+  created_at: string
+  messages: MessageItem[]
+}
+
 interface AuraState {
   isAuthenticated: boolean
   token: string | null
@@ -85,6 +110,8 @@ interface AuraState {
   tasks: TaskItem[]
   deadlines: DeadlineItem[]
   contexts: ContextItem[]
+  conversations: ConversationItem[]
+  activeConversationId: string | null
   loading: boolean
   error: string | null
   
@@ -96,6 +123,14 @@ interface AuraState {
   toggleTaskStatus: (taskId: string) => Promise<void>
   createContext: (name: string, description?: string) => Promise<void>
   submitBriefFeedback: (briefId: string, rating: string, comment?: string) => Promise<boolean>
+  submitOnboarding: (displayName: string, timezone: string, whatAreYouBuilding: string, topGoals: string[], biggestChallenges: string[]) => Promise<boolean>
+  fetchConversations: () => Promise<void>
+  createConversation: (title?: string) => Promise<string | null>
+  sendMessage: (conversationId: string, content: string) => Promise<void>
+  approveKnowledgeItem: (type: 'fact' | 'decision' | 'task' | 'deadline', id: string) => Promise<boolean>
+  rejectKnowledgeItem: (type: 'fact' | 'decision' | 'task' | 'deadline', id: string, reason: string, messageId: string) => Promise<boolean>
+  updateKnowledgeItem: (type: 'fact' | 'decision' | 'task' | 'deadline', id: string, payload: any, messageId: string) => Promise<boolean>
+  fetchUser: () => Promise<void>
 }
 
 // Pre-populated mock data for UI-first design
@@ -124,29 +159,29 @@ const mockBrief: ExecutiveBrief = {
 }
 
 const mockFacts: FactItem[] = [
-  { id: "f-1", entity: "project", value: "AURA is a personal cognitive operating system", confidence: 1.0, category: "project_detail", context_id: "ctx-1", created_at: "2026-06-24T12:00:00Z" },
-  { id: "f-2", entity: "frontend", value: "React 19, Vite, Tailwind v4 and Zustand are used for the frontend", confidence: 0.95, category: "tech_stack", context_id: "ctx-1", created_at: "2026-06-24T12:05:00Z" },
-  { id: "f-3", entity: "database", value: "PostgreSQL is used as the primary database", confidence: 1.0, category: "tech_stack", context_id: "ctx-1", created_at: "2026-06-24T12:10:00Z" },
-  { id: "f-4", entity: "metric", value: "The founder dogfood metric is tracked daily", confidence: 1.0, category: "business_rule", context_id: "ctx-1", created_at: "2026-06-24T12:15:00Z" },
-  { id: "f-5", entity: "LLM", value: "Local-first Ollama is the default LLM provider", confidence: 0.9, category: "tech_stack", context_id: "ctx-2", created_at: "2026-06-24T12:20:00Z" }
+  { id: "f-1", entity: "project", value: "AURA is a personal cognitive operating system", confidence: 1.0, review_state: "pending", category: "project_detail", context_id: "ctx-1", created_at: "2026-06-24T12:00:00Z" },
+  { id: "f-2", entity: "frontend", value: "React 19, Vite, Tailwind v4 and Zustand are used for the frontend", confidence: 0.95, review_state: "pending", category: "tech_stack", context_id: "ctx-1", created_at: "2026-06-24T12:05:00Z" },
+  { id: "f-3", entity: "database", value: "PostgreSQL is used as the primary database", confidence: 1.0, review_state: "pending", category: "tech_stack", context_id: "ctx-1", created_at: "2026-06-24T12:10:00Z" },
+  { id: "f-4", entity: "metric", value: "The founder dogfood metric is tracked daily", confidence: 1.0, review_state: "pending", category: "business_rule", context_id: "ctx-1", created_at: "2026-06-24T12:15:00Z" },
+  { id: "f-5", entity: "LLM", value: "Local-first Ollama is the default LLM provider", confidence: 0.9, review_state: "pending", category: "tech_stack", context_id: "ctx-2", created_at: "2026-06-24T12:20:00Z" }
 ]
 
 const mockDecisions: DecisionItem[] = [
-  { id: "d-1", chosen_option: "PostgreSQL selected over Neo4j", confidence: 1.0, context_id: "ctx-1", created_at: "2026-06-24T10:00:00Z" },
-  { id: "d-2", chosen_option: "Skip Embeddings in Sprint 3 to focus on cognition first", confidence: 0.95, context_id: "ctx-1", created_at: "2026-06-24T11:00:00Z" },
-  { id: "d-3", chosen_option: "Focus on Daily Brief MVP first", confidence: 0.9, context_id: "ctx-1", created_at: "2026-06-24T11:30:00Z" }
+  { id: "d-1", chosen_option: "PostgreSQL selected over Neo4j", confidence: 1.0, review_state: "pending", context_id: "ctx-1", created_at: "2026-06-24T10:00:00Z" },
+  { id: "d-2", chosen_option: "Skip Embeddings in Sprint 3 to focus on cognition first", confidence: 0.95, review_state: "pending", context_id: "ctx-1", created_at: "2026-06-24T11:00:00Z" },
+  { id: "d-3", chosen_option: "Focus on Daily Brief MVP first", confidence: 0.9, review_state: "pending", context_id: "ctx-1", created_at: "2026-06-24T11:30:00Z" }
 ]
 
 const mockTasks: TaskItem[] = [
-  { id: "t-1", task: "Finish Knowledge Explorer", status: "pending", priority: 1, context_id: "ctx-1", created_at: "2026-06-24T09:00:00Z" },
-  { id: "t-2", task: "Build Executive Brief UI", status: "completed", priority: 1, context_id: "ctx-1", created_at: "2026-06-24T08:00:00Z" },
-  { id: "t-3", task: "Setup Database Migrations", status: "completed", priority: 2, context_id: "ctx-1", created_at: "2026-06-24T07:00:00Z" },
-  { id: "t-4", task: "Conduct 7-day Founder Dogfooding", status: "pending", priority: 1, context_id: "ctx-1", created_at: "2026-06-24T09:15:00Z" }
+  { id: "t-1", task: "Finish Knowledge Explorer", status: "pending", priority: 1, review_state: "pending", confidence: 1.0, context_id: "ctx-1", created_at: "2026-06-24T09:00:00Z" },
+  { id: "t-2", task: "Build Executive Brief UI", status: "completed", priority: 1, review_state: "pending", confidence: 1.0, context_id: "ctx-1", created_at: "2026-06-24T08:00:00Z" },
+  { id: "t-3", task: "Setup Database Migrations", status: "completed", priority: 2, review_state: "pending", confidence: 1.0, context_id: "ctx-1", created_at: "2026-06-24T07:00:00Z" },
+  { id: "t-4", task: "Conduct 7-day Founder Dogfooding", status: "pending", priority: 1, review_state: "pending", confidence: 1.0, context_id: "ctx-1", created_at: "2026-06-24T09:15:00Z" }
 ]
 
 const mockDeadlines: DeadlineItem[] = [
-  { id: "dl-1", title: "Benchmark Review", due_at: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), confidence: 1.0, context_id: "ctx-1", created_at: "2026-06-24T09:30:00Z" },
-  { id: "dl-2", title: "Sprint 4 Launch", due_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), confidence: 0.95, context_id: "ctx-1", created_at: "2026-06-24T09:40:00Z" }
+  { id: "dl-1", title: "Benchmark Review", due_at: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(), confidence: 1.0, review_state: "pending", context_id: "ctx-1", created_at: "2026-06-24T09:30:00Z" },
+  { id: "dl-2", title: "Sprint 4 Launch", due_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), confidence: 0.95, review_state: "pending", context_id: "ctx-1", created_at: "2026-06-24T09:40:00Z" }
 ]
 
 const mockContexts: ContextItem[] = [
@@ -178,6 +213,8 @@ export const useAuraStore = create<AuraState>((set, get) => ({
   tasks: [],
   deadlines: [],
   contexts: [],
+  conversations: [],
+  activeConversationId: null,
   loading: false,
   error: null,
 
@@ -208,6 +245,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       // Pre-fetch briefings and explorer data
       await get().fetchBriefToday()
       await get().fetchKnowledge()
+      await get().fetchConversations()
       set({ loading: false })
       return true
     } catch (err: any) {
@@ -227,7 +265,9 @@ export const useAuraStore = create<AuraState>((set, get) => ({
       decisions: [],
       tasks: [],
       deadlines: [],
-      contexts: []
+      contexts: [],
+      conversations: [],
+      activeConversationId: null
     })
   },
 
@@ -305,11 +345,9 @@ export const useAuraStore = create<AuraState>((set, get) => ({
         body: JSON.stringify({ status: newStatus })
       })
       if (!res.ok) {
-        // Rollback on error
         set({ tasks: originalTasks })
       }
     } catch (err) {
-      // Rollback on network error
       set({ tasks: originalTasks })
     }
   },
@@ -326,7 +364,6 @@ export const useAuraStore = create<AuraState>((set, get) => ({
           contexts: [newCtx, ...state.contexts]
         }))
       } else {
-        // Fallback local creation
         const localCtx: ContextItem = {
           id: `ctx-${Date.now()}`,
           name,
@@ -340,7 +377,6 @@ export const useAuraStore = create<AuraState>((set, get) => ({
         }))
       }
     } catch (err) {
-      // Fallback local creation
       const localCtx: ContextItem = {
         id: `ctx-${Date.now()}`,
         name,
@@ -365,6 +401,242 @@ export const useAuraStore = create<AuraState>((set, get) => ({
     } catch (err) {
       console.error("Failed to submit feedback to API", err)
       return false
+    }
+  },
+
+  submitOnboarding: async (displayName, timezone, whatAreYouBuilding, topGoals, biggestChallenges) => {
+    set({ loading: true, error: null })
+    try {
+      const res = await apiFetch(`${API_PREFIX}/users/me/onboarding`, {
+        method: 'POST',
+        body: JSON.stringify({
+          display_name: displayName,
+          timezone,
+          what_are_you_building: whatAreYouBuilding,
+          top_goals: topGoals,
+          biggest_challenges: biggestChallenges
+        })
+      })
+      if (res.ok) {
+        const userData = await res.json()
+        set({ user: userData, loading: false })
+        await get().fetchKnowledge()
+        return true
+      }
+      set({ loading: false, error: "Failed to submit onboarding details" })
+      return false
+    } catch (err: any) {
+      set({ loading: false, error: err.message || "Onboarding failed" })
+      return false
+    }
+  },
+
+  fetchConversations: async () => {
+    set({ loading: true, error: null })
+    try {
+      const res = await apiFetch(`${API_PREFIX}/conversations`)
+      if (res.ok) {
+        const data = await res.json()
+        set((state) => ({ 
+          conversations: data, 
+          activeConversationId: data.length > 0 ? data[0].id : state.activeConversationId,
+          loading: false 
+        }))
+      } else {
+        set({ conversations: [], loading: false })
+      }
+    } catch (err) {
+      set({ conversations: [], loading: false })
+    }
+  },
+
+  createConversation: async (title = "New Capture Session") => {
+    try {
+      const res = await apiFetch(`${API_PREFIX}/conversations`, {
+        method: 'POST',
+        body: JSON.stringify({ title })
+      })
+      if (res.ok) {
+        const newConv = await res.json()
+        // Initialize messages list in frontend object
+        newConv.messages = []
+        set((state) => ({
+          conversations: [newConv, ...state.conversations],
+          activeConversationId: newConv.id
+        }))
+        return newConv.id
+      }
+      return null
+    } catch (err) {
+      return null
+    }
+  },
+
+  sendMessage: async (conversationId, content) => {
+    set({ loading: true, error: null })
+    try {
+      const res = await apiFetch(`${API_PREFIX}/conversations/${conversationId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ content, role: 'user' })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const userMsg: MessageItem = {
+          ...data.message,
+          facts: data.facts,
+          decisions: data.decisions,
+          tasks: data.tasks,
+          deadlines: data.deadlines
+        }
+        
+        set((state) => {
+          const updatedConversations = state.conversations.map(c => {
+            if (c.id === conversationId) {
+              return {
+                ...c,
+                messages: [...c.messages, userMsg]
+              }
+            }
+            return c
+          })
+          return {
+            conversations: updatedConversations,
+            loading: false
+          }
+        })
+        
+        await get().fetchKnowledge()
+      } else {
+        set({ loading: false, error: "Failed to send message" })
+      }
+    } catch (err: any) {
+      set({ loading: false, error: err.message || "Failed to send message" })
+    }
+  },
+
+  approveKnowledgeItem: async (type, id) => {
+    try {
+      const endpoint = type === 'fact' ? 'facts' : type === 'decision' ? 'decisions' : type === 'task' ? 'tasks' : 'deadlines'
+      const res = await apiFetch(`${API_PREFIX}/${endpoint}/${id}/approve`, {
+        method: 'POST'
+      })
+      if (res.ok) {
+        set((state) => {
+          const updateItem = (item: any) => item.id === id ? { ...item, review_state: 'approved' } : item
+          
+          const updatedConversations = state.conversations.map(c => ({
+            ...c,
+            messages: c.messages.map(m => ({
+              ...m,
+              facts: m.facts?.map(updateItem),
+              decisions: m.decisions?.map(updateItem),
+              tasks: m.tasks?.map(updateItem),
+              deadlines: m.deadlines?.map(updateItem)
+            }))
+          }))
+
+          return {
+            conversations: updatedConversations,
+            facts: state.facts.map(updateItem),
+            decisions: state.decisions.map(updateItem),
+            tasks: state.tasks.map(updateItem),
+            deadlines: state.deadlines.map(updateItem)
+          }
+        })
+        return true
+      }
+      return false
+    } catch (err) {
+      return false
+    }
+  },
+
+  rejectKnowledgeItem: async (type, id, reason, messageId) => {
+    try {
+      const endpoint = type === 'fact' ? 'facts' : type === 'decision' ? 'decisions' : type === 'task' ? 'tasks' : 'deadlines'
+      const res = await apiFetch(`${API_PREFIX}/${endpoint}/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason, message_id: messageId })
+      })
+      if (res.ok) {
+        set((state) => {
+          const updateItem = (item: any) => item.id === id ? { ...item, review_state: 'rejected' } : item
+          
+          const updatedConversations = state.conversations.map(c => ({
+            ...c,
+            messages: c.messages.map(m => ({
+              ...m,
+              facts: m.facts?.map(updateItem),
+              decisions: m.decisions?.map(updateItem),
+              tasks: m.tasks?.map(updateItem),
+              deadlines: m.deadlines?.map(updateItem)
+            }))
+          }))
+
+          return {
+            conversations: updatedConversations,
+            facts: state.facts.filter(f => f.id !== id),
+            decisions: state.decisions.filter(d => d.id !== id),
+            tasks: state.tasks.filter(t => t.id !== id),
+            deadlines: state.deadlines.filter(dl => dl.id !== id)
+          }
+        })
+        return true
+      }
+      return false
+    } catch (err) {
+      return false
+    }
+  },
+
+  updateKnowledgeItem: async (type, id, payload, messageId) => {
+    try {
+      const endpoint = type === 'fact' ? 'facts' : type === 'decision' ? 'decisions' : type === 'task' ? 'tasks' : 'deadlines'
+      const res = await apiFetch(`${API_PREFIX}/${endpoint}/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ ...payload, message_id: messageId })
+      })
+      if (res.ok) {
+        const updatedItem = await res.json()
+        set((state) => {
+          const updateItem = (item: any) => item.id === id ? updatedItem : item
+          
+          const updatedConversations = state.conversations.map(c => ({
+            ...c,
+            messages: c.messages.map(m => ({
+              ...m,
+              facts: m.facts?.map(updateItem),
+              decisions: m.decisions?.map(updateItem),
+              tasks: m.tasks?.map(updateItem),
+              deadlines: m.deadlines?.map(updateItem)
+            }))
+          }))
+
+          return {
+            conversations: updatedConversations,
+            facts: state.facts.map(updateItem),
+            decisions: state.decisions.map(updateItem),
+            tasks: state.tasks.map(updateItem),
+            deadlines: state.deadlines.map(updateItem)
+          }
+        })
+        return true
+      }
+      return false
+    } catch (err) {
+      return false
+    }
+  },
+
+  fetchUser: async () => {
+    try {
+      const res = await apiFetch(`${API_PREFIX}/users/me`)
+      if (res.ok) {
+        const userData = await res.json()
+        set({ user: userData })
+      }
+    } catch (e) {
+      console.error("Failed to fetch user profile", e)
     }
   }
 }))
