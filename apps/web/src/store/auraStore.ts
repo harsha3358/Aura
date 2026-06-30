@@ -127,9 +127,9 @@ interface AuraState {
   fetchConversations: () => Promise<void>
   createConversation: (title?: string) => Promise<string | null>
   sendMessage: (conversationId: string, content: string) => Promise<void>
-  approveKnowledgeItem: (type: 'fact' | 'decision' | 'task' | 'deadline', id: string) => Promise<boolean>
-  rejectKnowledgeItem: (type: 'fact' | 'decision' | 'task' | 'deadline', id: string, reason: string, messageId: string) => Promise<boolean>
-  updateKnowledgeItem: (type: 'fact' | 'decision' | 'task' | 'deadline', id: string, payload: any, messageId: string) => Promise<boolean>
+  approveKnowledgeItem: (params: { type: 'fact' | 'decision' | 'task' | 'deadline'; id: string; messageId: string }) => Promise<boolean>
+  rejectKnowledgeItem: (params: { type: 'fact' | 'decision' | 'task' | 'deadline'; id: string; reason: string; messageId: string }) => Promise<boolean>
+  updateKnowledgeItem: (params: { type: 'fact' | 'decision' | 'task' | 'deadline'; id: string; payload: any; messageId: string }) => Promise<boolean>
   fetchUser: () => Promise<void>
 }
 
@@ -514,13 +514,23 @@ export const useAuraStore = create<AuraState>((set, get) => ({
     }
   },
 
-  approveKnowledgeItem: async (type, id) => {
+  approveKnowledgeItem: async ({ type, id, messageId }) => {
     try {
       const endpoint = type === 'fact' ? 'facts' : type === 'decision' ? 'decisions' : type === 'task' ? 'tasks' : 'deadlines'
       const res = await apiFetch(`${API_PREFIX}/${endpoint}/${id}/approve`, {
         method: 'POST'
       })
       if (res.ok) {
+        // Post correct feedback to API
+        await apiFetch(`${API_PREFIX}/extraction/feedback`, {
+          method: 'POST',
+          body: JSON.stringify({
+            extraction_run_id: messageId,
+            feedback_type: 'correct',
+            comment: `Approved ${type}`
+          })
+        })
+
         set((state) => {
           const updateItem = (item: any) => item.id === id ? { ...item, review_state: 'approved' } : item
           
@@ -551,7 +561,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
     }
   },
 
-  rejectKnowledgeItem: async (type, id, reason, messageId) => {
+  rejectKnowledgeItem: async ({ type, id, reason, messageId }) => {
     try {
       const endpoint = type === 'fact' ? 'facts' : type === 'decision' ? 'decisions' : type === 'task' ? 'tasks' : 'deadlines'
       const res = await apiFetch(`${API_PREFIX}/${endpoint}/${id}/reject`, {
@@ -589,7 +599,7 @@ export const useAuraStore = create<AuraState>((set, get) => ({
     }
   },
 
-  updateKnowledgeItem: async (type, id, payload, messageId) => {
+  updateKnowledgeItem: async ({ type, id, payload, messageId }) => {
     try {
       const endpoint = type === 'fact' ? 'facts' : type === 'decision' ? 'decisions' : type === 'task' ? 'tasks' : 'deadlines'
       const res = await apiFetch(`${API_PREFIX}/${endpoint}/${id}`, {

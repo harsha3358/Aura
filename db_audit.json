@@ -1,0 +1,728 @@
+{
+  "users": [
+    {
+      "id": "88676c13-9c3f-4136-ad0d-8901f8e538c5",
+      "email": "harsha@aura.run",
+      "display_name": "Harsha",
+      "timezone": "Asia/Kolkata",
+      "onboarding_completed": false,
+      "created_at": "2026-06-25T11:20:56.302577+00:00",
+      "updated_at": "2026-06-25T11:20:56.302577+00:00"
+    },
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "email": "test@aura.dev",
+      "display_name": "Harsha",
+      "timezone": "Asia/Kolkata",
+      "onboarding_completed": true,
+      "created_at": "2026-06-24T02:59:49.532309+00:00",
+      "updated_at": "2026-06-30T10:57:03.554336+00:00"
+    }
+  ],
+  "contexts": [
+    {
+      "id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "name": "Startup Building",
+      "description": "Developing AURA",
+      "confidence": null,
+      "is_active": true,
+      "created_at": "2026-06-30T10:57:02.582401+00:00"
+    },
+    {
+      "id": "2f63d27b-6253-4473-805f-514a87370a26",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "name": "Startup Building",
+      "description": "Building my next startup AURA",
+      "confidence": 1.0,
+      "is_active": true,
+      "created_at": "2026-06-30T10:57:02.737463+00:00"
+    },
+    {
+      "id": "39afe7e0-ea05-48a0-a83a-d37b204d5576",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "name": "General focus",
+      "description": "Initial context created during onboarding for building AURA AI Platform",
+      "confidence": 1.0,
+      "is_active": true,
+      "created_at": "2026-06-30T10:57:03.556714+00:00"
+    }
+  ],
+  "conversations": [
+    {
+      "id": "f2ddf4d3-cac7-4439-b0be-c075e9fa14fd",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "New Session",
+      "context_id": null,
+      "created_at": "2026-06-25T07:15:15.258117+00:00"
+    },
+    {
+      "id": "1d759af8-e999-4aee-8567-c2a45aa96316",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Test Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:52:07.692935+00:00"
+    },
+    {
+      "id": "deb1705f-65a9-4095-ac18-b0f0e3a27bfa",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Message Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:52:07.771453+00:00"
+    },
+    {
+      "id": "ded22331-ab22-465f-9403-f690d66c4616",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Feedback Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:52:07.894642+00:00"
+    },
+    {
+      "id": "d3f7bf75-7aa7-4bce-8e6e-f37759a931e8",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "List Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:52:07.984987+00:00"
+    },
+    {
+      "id": "f1d48f44-c24a-4b2c-920a-5d64580d1f4d",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Review Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:52:08.111229+00:00"
+    },
+    {
+      "id": "ec3281c4-fad2-4048-9340-62992d3506ad",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Test Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:57:02.807437+00:00"
+    },
+    {
+      "id": "156f3369-9950-4bce-a6e9-b77a8b4b7713",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Message Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:57:02.863454+00:00"
+    },
+    {
+      "id": "8eee4dc3-8219-4edf-a617-f11e9ca12232",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Feedback Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:57:02.964256+00:00"
+    },
+    {
+      "id": "8aeb054c-f70f-4e73-b5d5-6fab79f1b22c",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "List Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:57:03.077533+00:00"
+    },
+    {
+      "id": "bec9e098-0fdc-459c-8876-fd460e3d65ab",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Review Chat",
+      "context_id": null,
+      "created_at": "2026-06-30T10:57:03.221178+00:00"
+    },
+    {
+      "id": "0efe43b1-0254-46bc-9d52-e7f0d2a8a530",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Feedback Detailed",
+      "context_id": null,
+      "created_at": "2026-06-30T10:57:03.400279+00:00"
+    },
+    {
+      "id": "ae723904-a3b5-432f-b5f0-5b62831fb4fb",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "New Capture Session",
+      "context_id": null,
+      "created_at": "2026-06-30T10:58:42.526167+00:00"
+    },
+    {
+      "id": "9bd6ae4a-657a-4d18-8b3f-319a79b0fb08",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "New Capture Session",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "created_at": "2026-06-30T11:00:06.939987+00:00"
+    },
+    {
+      "id": "0b09ea39-4f92-4566-92e5-96891805f960",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "New Capture Session",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "created_at": "2026-06-30T11:03:24.167800+00:00"
+    }
+  ],
+  "messages": [
+    {
+      "id": "df5ee64d-8e01-406b-8531-abe6669608de",
+      "conversation_id": "deb1705f-65a9-4095-ac18-b0f0e3a27bfa",
+      "role": "user",
+      "content": "Hello AURA",
+      "created_at": "2026-06-30T10:52:07.791386+00:00"
+    },
+    {
+      "id": "310c3d92-cde5-4275-8c54-e89975bccf19",
+      "conversation_id": "ded22331-ab22-465f-9403-f690d66c4616",
+      "role": "user",
+      "content": "AURA feedback test message",
+      "created_at": "2026-06-30T10:52:07.914566+00:00"
+    },
+    {
+      "id": "f43e397d-4c5f-4b53-b2d8-bd1668242066",
+      "conversation_id": "f1d48f44-c24a-4b2c-920a-5d64580d1f4d",
+      "role": "user",
+      "content": "I am building AURA using PostgreSQL by Friday",
+      "created_at": "2026-06-30T10:52:08.140259+00:00"
+    },
+    {
+      "id": "471228ef-aa67-4198-98eb-89985377b69c",
+      "conversation_id": "156f3369-9950-4bce-a6e9-b77a8b4b7713",
+      "role": "user",
+      "content": "Hello AURA",
+      "created_at": "2026-06-30T10:57:02.884386+00:00"
+    },
+    {
+      "id": "ea6b7e2f-3151-4d05-b515-2c85c4affa16",
+      "conversation_id": "8eee4dc3-8219-4edf-a617-f11e9ca12232",
+      "role": "user",
+      "content": "AURA feedback test message",
+      "created_at": "2026-06-30T10:57:02.980716+00:00"
+    },
+    {
+      "id": "d0141574-a44e-43ea-8f5c-eaf879d205cf",
+      "conversation_id": "bec9e098-0fdc-459c-8876-fd460e3d65ab",
+      "role": "user",
+      "content": "I am building AURA using PostgreSQL by Friday",
+      "created_at": "2026-06-30T10:57:03.243766+00:00"
+    },
+    {
+      "id": "ec21fdac-013f-49f7-af6a-e4214e3d06c1",
+      "conversation_id": "0efe43b1-0254-46bc-9d52-e7f0d2a8a530",
+      "role": "user",
+      "content": "A message to gather feedback",
+      "created_at": "2026-06-30T10:57:03.417780+00:00"
+    },
+    {
+      "id": "308c37ff-f297-4d2f-a178-09c8eb2022c3",
+      "conversation_id": "ae723904-a3b5-432f-b5f0-5b62831fb4fb",
+      "role": "user",
+      "content": "I decided to use PostgreSQL for our database by Friday",
+      "created_at": "2026-06-30T10:58:42.587852+00:00"
+    },
+    {
+      "id": "f7f85417-0b64-4c2e-acf7-80d182275372",
+      "conversation_id": "9bd6ae4a-657a-4d18-8b3f-319a79b0fb08",
+      "role": "user",
+      "content": "I decided to use PostgreSQL for our database by Friday",
+      "created_at": "2026-06-30T11:00:07.033622+00:00"
+    },
+    {
+      "id": "ecb1d792-7704-4de3-aba6-1a872c18dc23",
+      "conversation_id": "0b09ea39-4f92-4566-92e5-96891805f960",
+      "role": "user",
+      "content": "I decided to use PostgreSQL for our database by Friday",
+      "created_at": "2026-06-30T11:03:24.256953+00:00"
+    }
+  ],
+  "facts": [
+    {
+      "id": "9e882622-549a-4ef9-855b-7b9a8235e1b6",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "entity": "project",
+      "value": "AURA Platform",
+      "context_id": null,
+      "project_id": null,
+      "source_message_id": "f43e397d-4c5f-4b53-b2d8-bd1668242066",
+      "confidence": 0.95,
+      "embedding": null,
+      "created_at": "2026-06-30T10:52:08.168179+00:00",
+      "superseded_by": null,
+      "source_conversation_id": "f1d48f44-c24a-4b2c-920a-5d64580d1f4d",
+      "extractor_version": "v0.1",
+      "review_state": "approved"
+    },
+    {
+      "id": "7a3cb1ee-62b4-4a81-93c4-cd12503bb391",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "entity": "project",
+      "value": "AURA Platform",
+      "context_id": null,
+      "project_id": null,
+      "source_message_id": "d0141574-a44e-43ea-8f5c-eaf879d205cf",
+      "confidence": 0.95,
+      "embedding": null,
+      "created_at": "2026-06-30T10:57:03.265856+00:00",
+      "superseded_by": null,
+      "source_conversation_id": "bec9e098-0fdc-459c-8876-fd460e3d65ab",
+      "extractor_version": "v0.1",
+      "review_state": "approved"
+    },
+    {
+      "id": "39261a88-b75d-4ec5-8f91-c7826d8a0a42",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "entity": "database",
+      "value": "PostgreSQL",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": "f7f85417-0b64-4c2e-acf7-80d182275372",
+      "confidence": 0.95,
+      "embedding": null,
+      "created_at": "2026-06-30T11:00:07.663792+00:00",
+      "superseded_by": null,
+      "source_conversation_id": "9bd6ae4a-657a-4d18-8b3f-319a79b0fb08",
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    },
+    {
+      "id": "6567bbcf-ebc9-442d-9c23-4e93222f3328",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "entity": "database",
+      "value": "PostgreSQL",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": "ecb1d792-7704-4de3-aba6-1a872c18dc23",
+      "confidence": 0.95,
+      "embedding": null,
+      "created_at": "2026-06-30T11:03:24.850385+00:00",
+      "superseded_by": null,
+      "source_conversation_id": "0b09ea39-4f92-4566-92e5-96891805f960",
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "ff9adaad-1572-42d5-a767-3ac8597de035",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "chosen_option": "PostgreSQL selected",
+      "rejected_options": [],
+      "reason": null,
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": null,
+      "confidence": 1.0,
+      "created_at": "2026-06-30T10:57:02.593437+00:00",
+      "source_conversation_id": null,
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    },
+    {
+      "id": "58bea050-e34e-46c5-9c97-8634bb1df80d",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "chosen_option": "PostgreSQL",
+      "rejected_options": [],
+      "reason": null,
+      "context_id": null,
+      "project_id": null,
+      "source_message_id": "d0141574-a44e-43ea-8f5c-eaf879d205cf",
+      "confidence": 0.9,
+      "created_at": "2026-06-30T10:57:03.261180+00:00",
+      "source_conversation_id": "bec9e098-0fdc-459c-8876-fd460e3d65ab",
+      "extractor_version": "v0.1",
+      "review_state": "rejected"
+    },
+    {
+      "id": "812feb9e-b934-4932-8eb5-914550265940",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "chosen_option": "use PostgreSQL for our database",
+      "rejected_options": [],
+      "reason": null,
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": "f7f85417-0b64-4c2e-acf7-80d182275372",
+      "confidence": 0.9,
+      "created_at": "2026-06-30T11:00:07.655577+00:00",
+      "source_conversation_id": "9bd6ae4a-657a-4d18-8b3f-319a79b0fb08",
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    },
+    {
+      "id": "d480b046-0854-419c-9010-70a300f0cdcb",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "chosen_option": "use PostgreSQL for our database",
+      "rejected_options": [],
+      "reason": null,
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": "ecb1d792-7704-4de3-aba6-1a872c18dc23",
+      "confidence": 0.9,
+      "created_at": "2026-06-30T11:03:24.846033+00:00",
+      "source_conversation_id": "0b09ea39-4f92-4566-92e5-96891805f960",
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "4f8a9b9c-48a1-467e-a22a-0d162cc9f9e3",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "task": "Build Executive Brief UI",
+      "status": "pending",
+      "priority": null,
+      "deadline": null,
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": null,
+      "created_at": "2026-06-30T10:57:02.602483+00:00",
+      "updated_at": "2026-06-30T10:57:02.602483+00:00",
+      "source_conversation_id": null,
+      "extractor_version": "v0.1",
+      "review_state": "pending",
+      "confidence": 1.0
+    },
+    {
+      "id": "8c67384b-4403-4d82-9fb6-53a286822c01",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "task": "Test Sprint 5 Completed",
+      "status": "pending",
+      "priority": null,
+      "deadline": null,
+      "context_id": null,
+      "project_id": null,
+      "source_message_id": "d0141574-a44e-43ea-8f5c-eaf879d205cf",
+      "created_at": "2026-06-30T10:57:03.282411+00:00",
+      "updated_at": "2026-06-30T10:57:03.356238+00:00",
+      "source_conversation_id": "bec9e098-0fdc-459c-8876-fd460e3d65ab",
+      "extractor_version": "v0.1",
+      "review_state": "edited",
+      "confidence": 0.85
+    },
+    {
+      "id": "c2a1eff2-9230-4bbe-9e57-f824ff28cd08",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "task": "Ship Sprint 5",
+      "status": "pending",
+      "priority": 1,
+      "deadline": null,
+      "context_id": "39afe7e0-ea05-48a0-a83a-d37b204d5576",
+      "project_id": "873d5ada-f65c-43f9-95cc-dea7eb9b266f",
+      "source_message_id": null,
+      "created_at": "2026-06-30T10:57:03.568146+00:00",
+      "updated_at": "2026-06-30T10:57:03.568146+00:00",
+      "source_conversation_id": null,
+      "extractor_version": "onboarding",
+      "review_state": "pending",
+      "confidence": 1.0
+    },
+    {
+      "id": "09d01caa-341d-4f24-90ae-1cc6c14afa97",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "task": "Verify capture loops",
+      "status": "pending",
+      "priority": 1,
+      "deadline": null,
+      "context_id": "39afe7e0-ea05-48a0-a83a-d37b204d5576",
+      "project_id": "873d5ada-f65c-43f9-95cc-dea7eb9b266f",
+      "source_message_id": null,
+      "created_at": "2026-06-30T10:57:03.568146+00:00",
+      "updated_at": "2026-06-30T10:57:03.568146+00:00",
+      "source_conversation_id": null,
+      "extractor_version": "onboarding",
+      "review_state": "pending",
+      "confidence": 1.0
+    }
+  ],
+  "deadlines": [
+    {
+      "id": "a557dba3-a503-49e3-92ce-7b231140c4a3",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Benchmark Review",
+      "due_at": "2026-07-02T10:57:02.587978+00:00",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": null,
+      "confidence": null,
+      "created_at": "2026-06-30T10:57:02.589119+00:00",
+      "source_conversation_id": null,
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    },
+    {
+      "id": "ab18b4f4-33d1-41cb-92e9-9ef3aa699c5a",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Friday",
+      "due_at": "2026-07-03T10:57:03.258039+00:00",
+      "context_id": null,
+      "project_id": null,
+      "source_message_id": "d0141574-a44e-43ea-8f5c-eaf879d205cf",
+      "confidence": 0.8,
+      "created_at": "2026-06-30T10:57:03.258039+00:00",
+      "source_conversation_id": "bec9e098-0fdc-459c-8876-fd460e3d65ab",
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    },
+    {
+      "id": "c874f759-1c49-4169-8ae4-727ef782fad5",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Friday",
+      "due_at": "2026-07-03T11:00:07.628964+00:00",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": "f7f85417-0b64-4c2e-acf7-80d182275372",
+      "confidence": 0.85,
+      "created_at": "2026-06-30T11:00:07.646995+00:00",
+      "source_conversation_id": "9bd6ae4a-657a-4d18-8b3f-319a79b0fb08",
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    },
+    {
+      "id": "dd2e0f57-f9c4-4118-9b55-e1b7464985a6",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "title": "Friday",
+      "due_at": "2026-07-03T11:03:24.834996+00:00",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "project_id": null,
+      "source_message_id": "ecb1d792-7704-4de3-aba6-1a872c18dc23",
+      "confidence": 0.85,
+      "created_at": "2026-06-30T11:03:24.842143+00:00",
+      "source_conversation_id": "0b09ea39-4f92-4566-92e5-96891805f960",
+      "extractor_version": "v0.1",
+      "review_state": "pending"
+    }
+  ],
+  "observations": [
+    {
+      "id": "d80149b3-93ff-4959-87d5-7fd08cda7d2d",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "raw_type": "Challenge",
+      "payload": {
+        "value": "Time constraints"
+      },
+      "confidence": 1.0,
+      "source_message_id": null,
+      "review_status": "pending",
+      "created_at": "2026-06-30T10:52:08.350843+00:00"
+    },
+    {
+      "id": "b63d0b4a-5279-4e53-a535-36051dcc4e0f",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "raw_type": "Challenge",
+      "payload": {
+        "value": "Ollama latency"
+      },
+      "confidence": 1.0,
+      "source_message_id": null,
+      "review_status": "pending",
+      "created_at": "2026-06-30T10:52:08.350843+00:00"
+    },
+    {
+      "id": "9577925f-023d-47fc-9d99-d7409e8c2f48",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "raw_type": "Challenge",
+      "payload": {
+        "value": "Time constraints"
+      },
+      "confidence": 1.0,
+      "source_message_id": null,
+      "review_status": "pending",
+      "created_at": "2026-06-30T10:57:03.563852+00:00"
+    },
+    {
+      "id": "e25c38a0-a96c-4412-afc9-c224f1e96888",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "raw_type": "Challenge",
+      "payload": {
+        "value": "Ollama latency"
+      },
+      "confidence": 1.0,
+      "source_message_id": null,
+      "review_status": "pending",
+      "created_at": "2026-06-30T10:57:03.563852+00:00"
+    }
+  ],
+  "extraction_feedback": [
+    {
+      "id": "ce6a1710-2827-4be9-8ac2-61b138e32f76",
+      "extraction_run_id": "310c3d92-cde5-4275-8c54-e89975bccf19",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "correct",
+      "comment": "Perfect extraction",
+      "created_at": "2026-06-30T10:52:07.934249+00:00"
+    },
+    {
+      "id": "fdef3375-460a-43cf-9e39-e4ef063758a3",
+      "extraction_run_id": "f43e397d-4c5f-4b53-b2d8-bd1668242066",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "incorrect",
+      "comment": "Rejected Decision: Wrong Type",
+      "created_at": "2026-06-30T10:52:08.254006+00:00"
+    },
+    {
+      "id": "c95db7db-9766-4350-9c97-704b483e33e0",
+      "extraction_run_id": "f43e397d-4c5f-4b53-b2d8-bd1668242066",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "partial",
+      "comment": "Edited Task: Test Sprint 5 Completed",
+      "created_at": "2026-06-30T10:52:08.273070+00:00"
+    },
+    {
+      "id": "74dc3ac7-910f-4cb3-bcd4-ceb7371dd001",
+      "extraction_run_id": "ea6b7e2f-3151-4d05-b515-2c85c4affa16",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "correct",
+      "comment": "Perfect extraction",
+      "created_at": "2026-06-30T10:57:02.998045+00:00"
+    },
+    {
+      "id": "6f13c717-4342-40f2-93cf-3d98c1854e3b",
+      "extraction_run_id": "d0141574-a44e-43ea-8f5c-eaf879d205cf",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "incorrect",
+      "comment": "Rejected Decision: Wrong Type",
+      "created_at": "2026-06-30T10:57:03.336124+00:00"
+    },
+    {
+      "id": "6f7e05d2-c549-445c-86a8-2485574ab9f4",
+      "extraction_run_id": "d0141574-a44e-43ea-8f5c-eaf879d205cf",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "partial",
+      "comment": "Edited Task: Test Sprint 5 Completed",
+      "created_at": "2026-06-30T10:57:03.352535+00:00"
+    },
+    {
+      "id": "324e8503-490a-4103-a4fe-775c506c56d8",
+      "extraction_run_id": "ec21fdac-013f-49f7-af6a-e4214e3d06c1",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "correct",
+      "comment": "Nice extraction",
+      "created_at": "2026-06-30T10:57:03.433586+00:00"
+    },
+    {
+      "id": "8a9f7357-759a-4989-bd19-f7a6dc9cc125",
+      "extraction_run_id": "ec21fdac-013f-49f7-af6a-e4214e3d06c1",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "incorrect",
+      "comment": "Wrong extraction",
+      "created_at": "2026-06-30T10:57:03.444255+00:00"
+    },
+    {
+      "id": "405db51d-8216-4337-9416-c533a4421a78",
+      "extraction_run_id": "ec21fdac-013f-49f7-af6a-e4214e3d06c1",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "feedback_type": "partial",
+      "comment": "Partial extraction",
+      "created_at": "2026-06-30T10:57:03.459250+00:00"
+    }
+  ],
+  "context_assignments": [
+    {
+      "id": "69aab0f4-9913-4e04-b098-4da560391c89",
+      "entity_type": "message",
+      "entity_id": "f7f85417-0b64-4c2e-acf7-80d182275372",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "created_at": "2026-06-30T11:00:07.631043+00:00"
+    },
+    {
+      "id": "15521e11-df6f-47e5-a339-81ecf5a568ca",
+      "entity_type": "message",
+      "entity_id": "ecb1d792-7704-4de3-aba6-1a872c18dc23",
+      "context_id": "2e792c29-cffa-4a9e-bb55-03ad30013d07",
+      "created_at": "2026-06-30T11:03:24.835612+00:00"
+    }
+  ],
+  "executive_briefs": [
+    {
+      "id": "1ff0cf3f-b7a4-4b30-a23c-194f7bb51bd1",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "brief_date": "2026-06-25",
+      "structured_brief": {
+        "open_tasks": [],
+        "top_priorities": [
+          "No immediate priorities. Focus on planning."
+        ],
+        "active_projects": [],
+        "current_contexts": [],
+        "recent_decisions": [],
+        "upcoming_deadlines": [],
+        "suggested_next_actions": [
+          "Create a new project or start a session to capture work."
+        ]
+      },
+      "rendered_brief": "GOOD MORNING HARSHA\n\nSuggested Next Action:\n- Create a new project or start a session to capture work.",
+      "created_at": "2026-06-25T06:13:00.370770+00:00"
+    },
+    {
+      "id": "82402b33-7cfa-4d54-a026-d498744429f6",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "brief_date": "2026-06-30",
+      "structured_brief": {
+        "open_tasks": [
+          "Build Executive Brief UI"
+        ],
+        "top_priorities": [
+          "Complete task: Build Executive Brief UI",
+          "Meet deadline: Benchmark Review"
+        ],
+        "active_projects": [
+          "AURA"
+        ],
+        "current_contexts": [
+          "Startup Building"
+        ],
+        "recent_decisions": [
+          "PostgreSQL selected"
+        ],
+        "upcoming_deadlines": [
+          "Benchmark Review (due 2026-07-02)"
+        ],
+        "suggested_next_actions": [
+          "Begin working on: Build Executive Brief UI",
+          "Prepare for upcoming deadline: Benchmark Review"
+        ]
+      },
+      "rendered_brief": "GOOD MORNING TEST USER\n\nActive Project:\n- AURA\n\nCurrent Context:\n- Startup Building\n\nOpen Tasks:\n- Build Executive Brief UI\n\nUpcoming Deadlines:\n- Benchmark Review (due 2026-07-02 10:57)\n\nRecent Decisions:\n- PostgreSQL selected\n\nSuggested Next Action:\n- Begin working on: Build Executive Brief UI\n- Prepare for upcoming deadline: Benchmark Review",
+      "created_at": "2026-06-30T10:57:02.659579+00:00"
+    }
+  ],
+  "brief_feedback": [
+    {
+      "id": "481e0822-cba9-4e4c-9029-fe3ab1be4b16",
+      "brief_id": "82402b33-7cfa-4d54-a026-d498744429f6",
+      "user_id": "11111111-1111-1111-1111-111111111111",
+      "rating": "useful",
+      "feedback": "Great brief!",
+      "created_at": "2026-06-30T10:57:02.690532+00:00"
+    }
+  ],
+  "knowledge_reviews": [
+    {
+      "id": "5764ce26-2ffc-4988-a6d1-b71569f69799",
+      "entity_type": "decision",
+      "entity_id": "1340e96c-bc89-4636-988f-6b77faa019f7",
+      "review_type": "incorrect",
+      "rejection_reason": "Wrong Type",
+      "reviewer_id": "11111111-1111-1111-1111-111111111111",
+      "created_at": "2026-06-30T10:52:08.258268+00:00"
+    },
+    {
+      "id": "77ca3096-bac6-4bb4-868c-dc94930c2e11",
+      "entity_type": "task",
+      "entity_id": "10093b0d-1749-4d5c-8ccc-da591ce105d6",
+      "review_type": "partial",
+      "rejection_reason": null,
+      "reviewer_id": "11111111-1111-1111-1111-111111111111",
+      "created_at": "2026-06-30T10:52:08.274954+00:00"
+    },
+    {
+      "id": "7211bd10-e05f-477d-8b53-631e03c8f1e4",
+      "entity_type": "decision",
+      "entity_id": "58bea050-e34e-46c5-9c97-8634bb1df80d",
+      "review_type": "incorrect",
+      "rejection_reason": "Wrong Type",
+      "reviewer_id": "11111111-1111-1111-1111-111111111111",
+      "created_at": "2026-06-30T10:57:03.339852+00:00"
+    },
+    {
+      "id": "cc7a5bce-5328-4af7-a5f4-5c9b543cc99e",
+      "entity_type": "task",
+      "entity_id": "8c67384b-4403-4d82-9fb6-53a286822c01",
+      "review_type": "partial",
+      "rejection_reason": null,
+      "reviewer_id": "11111111-1111-1111-1111-111111111111",
+      "created_at": "2026-06-30T10:57:03.353987+00:00"
+    }
+  ]
+}

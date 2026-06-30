@@ -14,7 +14,7 @@
 | Executive Brief engine + API | completed | 3693840 | 2026-06-24 |
 | Brief UI (primary landing) | pending | - | - |
 | Onboarding wizard | pending | - | - |
-| Capture UI + extraction chips | pending | - | - |
+| Capture UI + extraction chips | implemented (validated) | - | 2026-06-30 |
 | Hypothesis Engine | pending | - | - |
 | Strategy Engine | pending | - | - |
 | Benchmark v1.0 + eval pipeline | completed (v0.1) | cd117f7 | 2026-06-24 |

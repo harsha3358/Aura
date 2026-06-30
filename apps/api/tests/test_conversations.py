@@ -193,3 +193,93 @@ async def test_knowledge_review_workflow():
 
     app.dependency_overrides[get_extraction_service] = mock_get_extraction_service
 
+
+@pytest.mark.anyio
+async def test_feedback_detailed_workflows():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        # Create a conversation and message
+        conv_resp = await ac.post("/api/v1/conversations", json={"title": "Feedback Detailed"})
+        conv_id = conv_resp.json()["id"]
+        msg_resp = await ac.post(f"/api/v1/conversations/{conv_id}/messages", json={
+            "content": "A message to gather feedback",
+            "role": "user"
+        })
+        msg_id = msg_resp.json()["message"]["id"]
+
+        # 1. Test correct feedback
+        fb_resp = await ac.post("/api/v1/extraction/feedback", json={
+            "extraction_run_id": msg_id,
+            "feedback_type": "correct",
+            "comment": "Nice extraction"
+        })
+        assert fb_resp.status_code == 201
+        assert fb_resp.json()["feedback_type"] == "correct"
+
+        # 2. Test incorrect feedback
+        fb_resp = await ac.post("/api/v1/extraction/feedback", json={
+            "extraction_run_id": msg_id,
+            "feedback_type": "incorrect",
+            "comment": "Wrong extraction"
+        })
+        assert fb_resp.status_code == 201
+        assert fb_resp.json()["feedback_type"] == "incorrect"
+
+        # 3. Test partial feedback
+        fb_resp = await ac.post("/api/v1/extraction/feedback", json={
+            "extraction_run_id": msg_id,
+            "feedback_type": "partial",
+            "comment": "Partial extraction"
+        })
+        assert fb_resp.status_code == 201
+        assert fb_resp.json()["feedback_type"] == "partial"
+
+        # 4. Test invalid feedback type
+        fb_resp = await ac.post("/api/v1/extraction/feedback", json={
+            "extraction_run_id": msg_id,
+            "feedback_type": "invalid_type",
+            "comment": "Should fail"
+        })
+        assert fb_resp.status_code == 400
+        assert "Invalid feedback type" in fb_resp.json()["detail"]
+
+        # 5. Test missing extraction_run_id / message id
+        fb_resp = await ac.post("/api/v1/extraction/feedback", json={
+            "feedback_type": "correct"
+        })
+        assert fb_resp.status_code == 422  # validation error
+
+        # 6. Test invalid uuid format
+        fb_resp = await ac.post("/api/v1/extraction/feedback", json={
+            "extraction_run_id": "not-a-uuid",
+            "feedback_type": "correct"
+        })
+        assert fb_resp.status_code == 422  # validation error
+
+        # 7. Test non-existent message ID
+        fb_resp = await ac.post("/api/v1/extraction/feedback", json={
+            "extraction_run_id": str(uuid.uuid4()),
+            "feedback_type": "correct"
+        })
+        assert fb_resp.status_code == 404
+        assert "not found" in fb_resp.json()["detail"]
+
+
+@pytest.mark.anyio
+async def test_feedback_unauthorized():
+    # Temporarily remove auth override to test 401/403
+    original_override = app.dependency_overrides.get(get_current_user)
+    if get_current_user in app.dependency_overrides:
+        del app.dependency_overrides[get_current_user]
+    try:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            response = await ac.post("/api/v1/extraction/feedback", json={
+                "extraction_run_id": str(uuid.uuid4()),
+                "feedback_type": "correct"
+            })
+            assert response.status_code in [401, 403]
+    finally:
+        if original_override:
+            app.dependency_overrides[get_current_user] = original_override
+
