@@ -1,0 +1,41 @@
+#!/bin/sh
+echo "⏳ Running pre-push checks (tests & build)..."
+
+# Capture the absolute path to the repository root
+REPO_ROOT=$(pwd)
+
+# Detect virtual environment bin directory and add absolute path to PATH dynamically
+if [ -d "$REPO_ROOT/apps/api/venv/bin" ]; then
+  export PATH="$REPO_ROOT/apps/api/venv/bin:$PATH"
+elif [ -d "$REPO_ROOT/apps/api/venv/Scripts" ]; then
+  export PATH="$REPO_ROOT/apps/api/venv/Scripts:$PATH"
+fi
+
+echo "Running backend pytest suite with coverage..."
+cd apps/api
+export PYTHONPATH=.
+python -m pytest --cov=app --cov-report=xml --cov-report=term
+if [ $? -ne 0 ]; then
+  echo "❌ Pre-push hook failed: Backend tests failed."
+  exit 1
+fi
+cd ../..
+
+echo "Running frontend vitest suite..."
+cd apps/web
+npm run test
+if [ $? -ne 0 ]; then
+  echo "❌ Pre-push hook failed: Frontend tests failed."
+  exit 1
+fi
+
+echo "Verifying frontend production build compiles..."
+npm run build
+if [ $? -ne 0 ]; then
+  echo "❌ Pre-push hook failed: Production build compilation failed."
+  exit 1
+fi
+cd ../..
+
+echo "✅ Pre-push verification successful! Pushing commits."
+exit 0

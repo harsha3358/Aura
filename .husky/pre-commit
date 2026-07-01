@@ -1,0 +1,21 @@
+#!/bin/sh
+echo "⏳ Running pre-commit hooks..."
+
+# Detect virtual environment bin directory and add to PATH dynamically so lint-staged can resolve ruff
+if [ -d "apps/api/venv/bin" ]; then
+  export PATH="apps/api/venv/bin:$PATH"
+elif [ -d "apps/api/venv/Scripts" ]; then
+  export PATH="apps/api/venv/Scripts:$PATH"
+fi
+
+# 1. Type Safety Check (must pass for the whole project)
+echo "Type checking TypeScript code..."
+npx tsc --project apps/web/tsconfig.json --noEmit
+
+if [ $? -ne 0 ]; then
+  echo "❌ Pre-commit hook failed: TypeScript compile errors found."
+  exit 1
+fi
+
+# 2. Run lint-staged on modified files
+npx lint-staged

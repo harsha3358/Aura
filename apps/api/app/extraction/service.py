@@ -3,8 +3,13 @@ from typing import List, Dict, Any, Tuple, Optional
 from pydantic import ValidationError
 
 from app.extraction.schemas import (
-    ExtractionResult, FactItem, DecisionItem, ConsideredOptionItem, 
-    TaskItem, DeadlineItem, ContextItem
+    ExtractionResult,
+    FactItem,
+    DecisionItem,
+    ConsideredOptionItem,
+    TaskItem,
+    DeadlineItem,
+    ContextItem,
 )
 from app.extraction import contract
 from app.services.llm import LLMProvider, OllamaProvider
@@ -65,23 +70,33 @@ Output:
 Return ONLY valid JSON. Do not include markdown code block formatting or backticks around the JSON.
 """
 
+
 class ExtractionService:
-    def __init__(self, llm_provider: Optional[LLMProvider] = None, confidence_threshold: float = 0.7):
+    def __init__(
+        self,
+        llm_provider: Optional[LLMProvider] = None,
+        confidence_threshold: float = 0.7,
+    ):
         self.llm = llm_provider or OllamaProvider()
         self.confidence_threshold = confidence_threshold
 
-    async def extract_from_message(self, message: str) -> Tuple[ExtractionResult, List[Dict[str, Any]]]:
+    async def extract_from_message(
+        self, message: str
+    ) -> Tuple[ExtractionResult, List[Dict[str, Any]]]:
         """
         Extracts structured knowledge from message.
         Returns:
             - Conforming ExtractionResult (containing items above confidence_threshold)
             - List of demoted/rejected observations (containing items below confidence_threshold)
         """
-        response_text = await self.llm.generate_chat([
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": message}
-        ], format="json")
-        
+        response_text = await self.llm.generate_chat(
+            [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": message},
+            ],
+            format="json",
+        )
+
         cleaned_text = response_text.strip()
         if cleaned_text.startswith("```json"):
             cleaned_text = cleaned_text[7:]
@@ -92,7 +107,9 @@ class ExtractionService:
         try:
             raw_data = json.loads(cleaned_text)
         except Exception as e:
-            return ExtractionResult(metadata={"confidence": 0.0, "reasoning": f"Failed to parse JSON: {e}"}), []
+            return ExtractionResult(
+                metadata={"confidence": 0.0, "reasoning": f"Failed to parse JSON: {e}"}
+            ), []
 
         valid_result = {
             "facts": [],
@@ -101,38 +118,40 @@ class ExtractionService:
             "tasks": [],
             "deadlines": [],
             "contexts": [],
-            "metadata": raw_data.get("metadata", {"confidence": 0.5, "reasoning": "Parsed raw data"})
+            "metadata": raw_data.get(
+                "metadata", {"confidence": 0.5, "reasoning": "Parsed raw data"}
+            ),
         }
         observations = []
-        
+
         def process_items(items_list: list, item_cls, enum_cls, dest_list: list):
             seen_values = set()
             for item in items_list:
                 if not isinstance(item, dict):
                     continue
-                
+
                 # 1. Reject missing confidence
                 if "confidence" not in item:
                     continue
-                
+
                 # 2. Reject empty values
                 val = item.get("value")
                 if not val or not str(val).strip():
                     continue
-                
+
                 # 3. Reject invalid categories
                 cat = item.get("category")
                 try:
                     enum_cls(cat)
                 except ValueError:
                     continue
-                
+
                 # 4. Reject duplicates within this run
                 val_clean = str(val).strip()
                 if val_clean in seen_values:
                     continue
                 seen_values.add(val_clean)
-                
+
                 try:
                     conf = float(item["confidence"])
                 except (ValueError, TypeError):
@@ -140,11 +159,13 @@ class ExtractionService:
 
                 if conf < self.confidence_threshold:
                     # 5. Demote below threshold -> observations only
-                    observations.append({
-                        "raw_type": item_cls.__name__,
-                        "payload": item,
-                        "confidence": conf
-                    })
+                    observations.append(
+                        {
+                            "raw_type": item_cls.__name__,
+                            "payload": item,
+                            "confidence": conf,
+                        }
+                    )
                 else:
                     try:
                         parsed_item = item_cls(**item)
@@ -152,11 +173,35 @@ class ExtractionService:
                     except ValidationError:
                         continue
 
-        process_items(raw_data.get("facts", []), FactItem, contract.Fact, valid_result["facts"])
-        process_items(raw_data.get("decisions", []), DecisionItem, contract.Decision, valid_result["decisions"])
-        process_items(raw_data.get("considered_options", []), ConsideredOptionItem, contract.ConsideredOption, valid_result["considered_options"])
-        process_items(raw_data.get("tasks", []), TaskItem, contract.Task, valid_result["tasks"])
-        process_items(raw_data.get("deadlines", []), DeadlineItem, contract.Deadline, valid_result["deadlines"])
-        process_items(raw_data.get("contexts", []), ContextItem, contract.Context, valid_result["contexts"])
+        process_items(
+            raw_data.get("facts", []), FactItem, contract.Fact, valid_result["facts"]
+        )
+        process_items(
+            raw_data.get("decisions", []),
+            DecisionItem,
+            contract.Decision,
+            valid_result["decisions"],
+        )
+        process_items(
+            raw_data.get("considered_options", []),
+            ConsideredOptionItem,
+            contract.ConsideredOption,
+            valid_result["considered_options"],
+        )
+        process_items(
+            raw_data.get("tasks", []), TaskItem, contract.Task, valid_result["tasks"]
+        )
+        process_items(
+            raw_data.get("deadlines", []),
+            DeadlineItem,
+            contract.Deadline,
+            valid_result["deadlines"],
+        )
+        process_items(
+            raw_data.get("contexts", []),
+            ContextItem,
+            contract.Context,
+            valid_result["contexts"],
+        )
 
         return ExtractionResult(**valid_result), observations

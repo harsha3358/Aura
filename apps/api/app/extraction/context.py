@@ -36,32 +36,40 @@ Instructions:
 Return ONLY raw valid JSON. Do not wrap in markdown backticks.
 """
 
+
 class ContextClassifier:
     def __init__(self, llm_provider: Optional[LLMProvider] = None):
         self.llm = llm_provider or OllamaProvider()
 
-    async def classify(self, message: str, existing_contexts: List[Context]) -> Dict[str, Any]:
-        existing_contexts_str = "\n".join([
-            f"- {c.name}: {c.description or 'No description'}"
-            for c in existing_contexts
-        ])
+    async def classify(
+        self, message: str, existing_contexts: List[Context]
+    ) -> Dict[str, Any]:
+        existing_contexts_str = "\n".join(
+            [
+                f"- {c.name}: {c.description or 'No description'}"
+                for c in existing_contexts
+            ]
+        )
         if not existing_contexts_str:
             existing_contexts_str = "(No existing contexts)"
-            
+
         prompt = SYSTEM_PROMPT.format(existing_contexts_str=existing_contexts_str)
-        
-        response_text = await self.llm.generate_chat([
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": message}
-        ], format="json")
-        
+
+        response_text = await self.llm.generate_chat(
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": message},
+            ],
+            format="json",
+        )
+
         cleaned_text = response_text.strip()
         if cleaned_text.startswith("```json"):
             cleaned_text = cleaned_text[7:]
         if cleaned_text.endswith("```"):
             cleaned_text = cleaned_text[:-3]
         cleaned_text = cleaned_text.strip()
-        
+
         try:
             return json.loads(cleaned_text)
         except Exception as e:
@@ -70,5 +78,5 @@ class ContextClassifier:
                 "shift_detected": False,
                 "new_context": None,
                 "confidence": 0.0,
-                "reasoning": f"Failed to parse context JSON: {e}"
+                "reasoning": f"Failed to parse context JSON: {e}",
             }

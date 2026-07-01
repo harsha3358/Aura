@@ -67,31 +67,53 @@ All workflow configuration files are located under `.github/workflows/`:
 
 ## Local Commands Mirroring CI
 
-You can run identical validation tasks on your developer machine before pushing to remote:
+You can run identical validation tasks on your developer machine before committing or opening a PR:
 
-```bash
-# 1. Verify README references and case sensitivity
-node scripts/verify_readme.js
+### Manually Running Local Verify commands
 
-# 2. Verify repository hygiene
-node scripts/check_hygiene.js
-
-# 3. Check architecture compliance
-node scripts/check_architecture.js
-
-# 4. Run backend tests (requires active postgres on port 5433)
-cd apps/api
-venv/Scripts/python -m pytest
-
-# 5. Run frontend tests and compile build
-cd apps/web
-npm run test
-npm run build
-```
+AURA provides two unified scripts run via npm at the repository root:
+* **`npm run verify`**: Runs fast validation checks including repository hygiene, README links, architecture alignment warnings, Ruff formatting/linter check, TypeScript compile, ESLint checks, Prettier formatting check, and Vitest unit tests.
+* **`npm run verify:release`**: Runs everything in `verify` plus backend `pytest` with coverage, frontend production compilation, and security vulnerability audits (`pip-audit` & `npm audit`).
 
 ---
 
-## Troubleshooting CI Failures
+## Local Git Hooks (Husky & lint-staged)
+
+To prevent code quality regressions from being committed, AURA uses **Husky** to manage git hooks:
+
+### 1. `pre-commit` hook (Target: <10s)
+* **TypeScript Compilation**: Runs `npx tsc --noEmit` on the whole project to block commits on type errors.
+* **Auto-Formatting & Lints**: Invokes `lint-staged` to run:
+  * TypeScript files: ESLint checking and Prettier code styling formatting.
+  * Python files: Ruff linter check and Ruff formatter check.
+
+### 2. `commit-msg` hook (Target: <1s)
+* Runs `scripts/verify_commit_msg.js` to ensure the commit header follows the **Conventional Commits** specification:
+  * Format: `<type>(<scope>)?: <description>`
+  * Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`
+  * Strict constraints: Subject line must be **≤ 72 characters**, must **not end with a period**, and must use the **imperative, present-tense mood** (e.g. `add` instead of `added`/`adds`, `fix` instead of `fixed`/`fixes`).
+
+### 3. `pre-push` hook (Target: 1–5m)
+* Runs backend API `pytest` suite with term coverage output.
+* Runs frontend Vitest component tests.
+* Compiles frontend production assets via Vite (`npm run build`).
+* Prevents pushing broken builds or failing tests to GitHub.
+
+### 4. Emergency Bypass Protocol
+In urgent development scenarios where a hook must be bypassed (e.g., intermediate WIP backup branch commits):
+- Commit bypass: `git commit -m "chore: temporary wip commit" --no-verify`
+- Push bypass: `git push origin branch-name --no-verify`
+> [!CAUTION]
+> Bypassing quality gates should be done sparingly. Bypassed pushes will still be caught and blocked by the GitHub Actions remote CI pipeline if tests fail.
+
+---
+
+## Future Workspace Architecture Note
+As AURA expands into multiple modules (e.g., helper libraries, extraction workers, browser extensions), the root `package.json` and devDependencies can be migrated to **npm workspaces** or **Turborepo** to orchestrate build caching and package isolation cleanly.
+
+---
+
+## Troubleshooting Local Failures
 
 1. **`❌ FORBIDDEN FILE TRACKED/UNIGNORED`**:
    - Run `git rm -r --cached <file>` to stop tracking the file.
@@ -100,5 +122,6 @@ npm run build
 2. **`❌ CASE MISMATCH`**:
    - Check that filename capitalization in `README.md` matches the actual file on disk. Linux GitHub runners are case-sensitive.
 
-3. **`❌ selector [data-testid="..."] not found`**:
-   - Check the logs of the Playwright smoke test. It indicates that either the frontend Vite server failed to start, the backend API crashed, or the UI layout changed. Check `error.log` and uploaded screenshot artifacts under the GitHub actions run to debug visually.
+3. **`❌ COMMIT MESSAGE TOO LONG` / `❌ IMPERATIVE MOOD WARNING`**:
+   - Adjust your commit message header to stay under 72 characters, remove any trailing periods, and write it in the imperative mood (e.g. `feat: implement login` instead of `feat: implemented login`).
+

@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react'
-import { useAuraStore } from './store/auraStore'
-import CaptureSession from './components/CaptureSession'
+import React, { useState, useEffect } from "react";
+import { useAuraStore } from "./store/auraStore";
+import CaptureSession from "./components/CaptureSession";
 
 function App() {
-  const { 
-    brief, 
-    facts, 
-    decisions, 
-    tasks, 
-    deadlines, 
-    contexts, 
-    login, 
+  const {
+    brief,
+    facts,
+    decisions,
+    tasks,
+    deadlines,
+    contexts,
+    login,
     logout,
     isAuthenticated,
     user,
@@ -28,137 +28,170 @@ function App() {
     approveKnowledgeItem,
     rejectKnowledgeItem,
     updateKnowledgeItem,
-    fetchUser
-  } = useAuraStore()
+    fetchUser,
+  } = useAuraStore();
 
-  const [currentView, setCurrentView] = useState<'dashboard' | 'explorer' | 'capture'>('dashboard')
-  const [showRawBrief, setShowRawBrief] = useState(false)
-  
+  const [currentView, setCurrentView] = useState<
+    "dashboard" | "explorer" | "capture"
+  >("dashboard");
+  const [showRawBrief, setShowRawBrief] = useState(false);
+
   // Onboarding Wizard State
-  const [onboardingStep, setOnboardingStep] = useState(1)
-  const [onboardingName, setOnboardingName] = useState('')
-  const [onboardingTimezone, setOnboardingTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
-  const [onboardingBuilding, setOnboardingBuilding] = useState('')
-  const [onboardingGoals, setOnboardingGoals] = useState(['', '', ''])
-  const [onboardingChallenges, setOnboardingChallenges] = useState(['', '', ''])
-  const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(1);
+  const [onboardingName, setOnboardingName] = useState("");
+  const [onboardingTimezone, setOnboardingTimezone] = useState(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+  );
+  const [onboardingBuilding, setOnboardingBuilding] = useState("");
+  const [onboardingGoals, setOnboardingGoals] = useState(["", "", ""]);
+  const [onboardingChallenges, setOnboardingChallenges] = useState([
+    "",
+    "",
+    "",
+  ]);
+  const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false);
 
   // Capture Session / Chat State
-  const [chatInput, setChatInput] = useState('')
-  const [isSendingMessage, setIsSendingMessage] = useState(false)
-  const [editingItemId, setEditingItemId] = useState<string | null>(null)
-  const [editingItemText, setEditingItemText] = useState('')
-  const [rejectingItemId, setRejectingItemId] = useState<string | null>(null)
+  const [chatInput, setChatInput] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingItemText, setEditingItemText] = useState("");
+  const [rejectingItemId, setRejectingItemId] = useState<string | null>(null);
 
   // Sync display name when user loads
   useEffect(() => {
     if (user?.display_name) {
-      setOnboardingName(user.display_name)
+      setOnboardingName(user.display_name);
     }
-  }, [user])
+  }, [user]);
 
   // Founder Feedback State
-  const [feedbackRating, setFeedbackRating] = useState<'useful' | 'neutral' | 'not_useful' | null>(null)
-  const [feedbackComment, setFeedbackComment] = useState('')
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
+  const [feedbackRating, setFeedbackRating] = useState<
+    "useful" | "neutral" | "not_useful" | null
+  >(null);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   // Reset feedback state when brief changes
   useEffect(() => {
-    setFeedbackRating(null)
-    setFeedbackComment('')
-    setFeedbackSubmitted(false)
-  }, [brief?.id])
+    setFeedbackRating(null);
+    setFeedbackComment("");
+    setFeedbackSubmitted(false);
+  }, [brief?.id]);
 
   // Knowledge Explorer State
-  const [explorerTab, setExplorerTab] = useState<'facts' | 'decisions' | 'tasks' | 'deadlines' | 'contexts'>('facts')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [contextFilter, setContextFilter] = useState('all')
-  const [dateSort, setDateSort] = useState<'newest' | 'oldest'>('newest')
+  const [explorerTab, setExplorerTab] = useState<
+    "facts" | "decisions" | "tasks" | "deadlines" | "contexts"
+  >("facts");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [contextFilter, setContextFilter] = useState("all");
+  const [dateSort, setDateSort] = useState<"newest" | "oldest">("newest");
 
   // Login Form State
-  const [loginEmail, setLoginEmail] = useState('harsha@aura.run')
-  const [loginPassword, setLoginPassword] = useState('password123')
-  const [loginError, setLoginError] = useState<string | null>(null)
-  const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const [loginEmail, setLoginEmail] = useState("harsha@aura.run");
+  const [loginPassword, setLoginPassword] = useState("password123");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Load initial data on mount/auth change
   useEffect(() => {
     if (isAuthenticated) {
-      fetchUser()
-      fetchBriefToday()
-      fetchKnowledge()
-      fetchConversations()
+      fetchUser();
+      fetchBriefToday();
+      fetchKnowledge();
+      fetchConversations();
     }
-  }, [isAuthenticated, fetchUser, fetchBriefToday, fetchKnowledge, fetchConversations])
+  }, [
+    isAuthenticated,
+    fetchUser,
+    fetchBriefToday,
+    fetchKnowledge,
+    fetchConversations,
+  ]);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoginError(null)
-    setIsLoggingIn(true)
-    const success = await login(loginEmail, loginPassword)
-    setIsLoggingIn(false)
+    e.preventDefault();
+    setLoginError(null);
+    setIsLoggingIn(true);
+    const success = await login(loginEmail, loginPassword);
+    setIsLoggingIn(false);
     if (success) {
-      setCurrentView('dashboard')
+      setCurrentView("dashboard");
     } else {
-      setLoginError('Invalid email or password')
+      setLoginError("Invalid email or password");
     }
-  }
+  };
 
   const handleLogout = () => {
-    logout()
-  }
+    logout();
+  };
 
   // Knowledge Explorer Helpers
-  const matchesSearch = (text: string) => 
-    text.toLowerCase().includes(searchQuery.toLowerCase())
+  const matchesSearch = (text: string) =>
+    text.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const matchesContext = (itemContextId?: string) => 
-    contextFilter === 'all' || itemContextId === contextFilter
+  const matchesContext = (itemContextId?: string) =>
+    contextFilter === "all" || itemContextId === contextFilter;
 
   const sortByDate = <T extends { created_at: string }>(items: T[]) => {
     return [...items].sort((a, b) => {
-      const timeA = new Date(a.created_at).getTime()
-      const timeB = new Date(b.created_at).getTime()
-      return dateSort === 'newest' ? timeB - timeA : timeA - timeB
-    })
-  }
+      const timeA = new Date(a.created_at).getTime();
+      const timeB = new Date(b.created_at).getTime();
+      return dateSort === "newest" ? timeB - timeA : timeA - timeB;
+    });
+  };
 
   // Filtered and Sorted Data for Explorer
   const filteredFacts = sortByDate(
-    facts.filter(f => matchesContext(f.context_id) && (matchesSearch(f.entity) || matchesSearch(f.value) || (f.category && matchesSearch(f.category))))
-  )
+    facts.filter(
+      (f) =>
+        matchesContext(f.context_id) &&
+        (matchesSearch(f.entity) ||
+          matchesSearch(f.value) ||
+          (f.category && matchesSearch(f.category))),
+    ),
+  );
 
   const filteredDecisions = sortByDate(
-    decisions.filter(d => matchesContext(d.context_id) && matchesSearch(d.chosen_option))
-  )
+    decisions.filter(
+      (d) => matchesContext(d.context_id) && matchesSearch(d.chosen_option),
+    ),
+  );
 
   const filteredTasks = sortByDate(
-    tasks.filter(t => matchesContext(t.context_id) && matchesSearch(t.task))
-  )
+    tasks.filter((t) => matchesContext(t.context_id) && matchesSearch(t.task)),
+  );
 
   const filteredDeadlines = sortByDate(
-    deadlines.filter(dl => matchesContext(dl.context_id) && matchesSearch(dl.title))
-  )
+    deadlines.filter(
+      (dl) => matchesContext(dl.context_id) && matchesSearch(dl.title),
+    ),
+  );
 
   const filteredContexts = sortByDate(
-    contexts.filter(c => (contextFilter === 'all' || c.id === contextFilter) && (matchesSearch(c.name) || matchesSearch(c.description)))
-  )
+    contexts.filter(
+      (c) =>
+        (contextFilter === "all" || c.id === contextFilter) &&
+        (matchesSearch(c.name) || matchesSearch(c.description)),
+    ),
+  );
 
   // Navigation Items
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'explorer', label: 'Knowledge Explorer' },
-    { id: 'capture', label: 'Capture Session' }
-  ]
+    { id: "dashboard", label: "Dashboard" },
+    { id: "explorer", label: "Knowledge Explorer" },
+    { id: "capture", label: "Capture Session" },
+  ];
 
   // KPI Calculations
-  const activeProjectsCount = brief?.structured_brief.active_projects.length || 0
-  const openTasksCount = tasks.filter(t => t.status === "pending").length
-  const upcomingDeadlinesCount = deadlines.length
-  const recentDecisionsCount = decisions.length
+  const activeProjectsCount =
+    brief?.structured_brief.active_projects.length || 0;
+  const openTasksCount = tasks.filter((t) => t.status === "pending").length;
+  const upcomingDeadlinesCount = deadlines.length;
+  const recentDecisionsCount = decisions.length;
 
-  const activeContext = contexts.find(c => c.is_active) || contexts[0]
+  const activeContext = contexts.find((c) => c.is_active) || contexts[0];
 
   // If not authenticated, render Login Screen
   if (!isAuthenticated) {
@@ -167,9 +200,11 @@ function App() {
         <div className="w-full max-w-sm bg-[#0c0c0e] border border-[#1e1e24] rounded-xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
           {/* Top aesthetic color bar */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent opacity-60"></div>
-          
+
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-extrabold tracking-widest text-white m-0">AURA</h1>
+            <h1 className="text-3xl font-extrabold tracking-widest text-white m-0">
+              AURA
+            </h1>
             <p className="text-xs text-[#71717a]">Your personal cognitive OS</p>
           </div>
 
@@ -179,9 +214,14 @@ function App() {
                 {loginError}
               </div>
             )}
-            
+
             <div className="space-y-1.5">
-              <label htmlFor="email" className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Email</label>
+              <label
+                htmlFor="email"
+                className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider"
+              >
+                Email
+              </label>
               <input
                 id="email"
                 type="email"
@@ -194,7 +234,12 @@ function App() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Password</label>
+              <label
+                htmlFor="password"
+                className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider"
+              >
+                Password
+              </label>
               <input
                 id="password"
                 type="password"
@@ -222,7 +267,7 @@ function App() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // If authenticated but user profile is not loaded, show Loading
@@ -231,10 +276,12 @@ function App() {
       <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] flex flex-col items-center justify-center font-sans">
         <div className="flex flex-col items-center space-y-4">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#a78bfa] border-t-transparent"></div>
-          <p className="text-sm text-[#71717a] animate-pulse">Initializing AURA...</p>
+          <p className="text-sm text-[#71717a] animate-pulse">
+            Initializing AURA...
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   // If onboarding is not completed, force Onboarding Wizard
@@ -244,12 +291,14 @@ function App() {
         <div className="w-full max-w-lg bg-[#0c0c0e] border border-[#1e1e24] rounded-xl p-8 shadow-2xl relative overflow-hidden space-y-6">
           {/* Top aesthetic color bar */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#a78bfa] to-transparent opacity-60"></div>
-          
+
           {/* Progress Header */}
           <div className="flex items-center justify-between border-b border-[#1e1e24] pb-4">
             <div>
               <h1 className="text-xl font-bold text-white">Initialize AURA</h1>
-              <p className="text-xs text-[#71717a] mt-0.5 font-medium">Let's set up your workspace</p>
+              <p className="text-xs text-[#71717a] mt-0.5 font-medium">
+                Let's set up your workspace
+              </p>
             </div>
             <span className="text-xs font-semibold bg-[#18181b] border border-[#27272a] px-2.5 py-1 rounded text-[#a78bfa]">
               Step {onboardingStep} of 4
@@ -258,7 +307,7 @@ function App() {
 
           {/* Progress Bar */}
           <div className="w-full bg-[#18181b] h-1 rounded-full overflow-hidden">
-            <div 
+            <div
               className="bg-[#a78bfa] h-full transition-all duration-300"
               style={{ width: `${(onboardingStep / 4) * 100}%` }}
             ></div>
@@ -269,11 +318,17 @@ function App() {
             {onboardingStep === 1 && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">Step 1: Your Profile</h3>
-                  <p className="text-xs text-[#71717a]">AURA adapts to your schedule and name.</p>
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">
+                    Step 1: Your Profile
+                  </h3>
+                  <p className="text-xs text-[#71717a]">
+                    AURA adapts to your schedule and name.
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Display Name</label>
+                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">
+                    Display Name
+                  </label>
                   <input
                     type="text"
                     required
@@ -284,7 +339,9 @@ function App() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">Timezone</label>
+                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">
+                    Timezone
+                  </label>
                   <input
                     type="text"
                     required
@@ -300,11 +357,17 @@ function App() {
             {onboardingStep === 2 && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">Step 2: Project Scope</h3>
-                  <p className="text-xs text-[#71717a]">What is the primary focus of your current project?</p>
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">
+                    Step 2: Project Scope
+                  </h3>
+                  <p className="text-xs text-[#71717a]">
+                    What is the primary focus of your current project?
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">What are you building?</label>
+                  <label className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider">
+                    What are you building?
+                  </label>
                   <textarea
                     required
                     rows={4}
@@ -320,21 +383,27 @@ function App() {
             {onboardingStep === 3 && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">Step 3: Immediate Targets</h3>
-                  <p className="text-xs text-[#71717a]">Define your top 3 goals. These will map to AURA tasks.</p>
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">
+                    Step 3: Immediate Targets
+                  </h3>
+                  <p className="text-xs text-[#71717a]">
+                    Define your top 3 goals. These will map to AURA tasks.
+                  </p>
                 </div>
                 <div className="space-y-3">
                   {onboardingGoals.map((goal, idx) => (
                     <div key={idx} className="space-y-1">
-                      <label className="text-[10px] font-semibold text-[#71717a] uppercase tracking-wider">Goal #{idx + 1}</label>
+                      <label className="text-[10px] font-semibold text-[#71717a] uppercase tracking-wider">
+                        Goal #{idx + 1}
+                      </label>
                       <input
                         type="text"
                         required
                         value={goal}
                         onChange={(e) => {
-                          const newGoals = [...onboardingGoals]
-                          newGoals[idx] = e.target.value
-                          setOnboardingGoals(newGoals)
+                          const newGoals = [...onboardingGoals];
+                          newGoals[idx] = e.target.value;
+                          setOnboardingGoals(newGoals);
                         }}
                         className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-sm text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all"
                         placeholder={`Goal description...`}
@@ -348,21 +417,28 @@ function App() {
             {onboardingStep === 4 && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">Step 4: Key Challenges</h3>
-                  <p className="text-xs text-[#71717a]">What obstacles are you currently navigating? These map to observations.</p>
+                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-1">
+                    Step 4: Key Challenges
+                  </h3>
+                  <p className="text-xs text-[#71717a]">
+                    What obstacles are you currently navigating? These map to
+                    observations.
+                  </p>
                 </div>
                 <div className="space-y-3">
                   {onboardingChallenges.map((challenge, idx) => (
                     <div key={idx} className="space-y-1">
-                      <label className="text-[10px] font-semibold text-[#71717a] uppercase tracking-wider">Challenge #{idx + 1}</label>
+                      <label className="text-[10px] font-semibold text-[#71717a] uppercase tracking-wider">
+                        Challenge #{idx + 1}
+                      </label>
                       <input
                         type="text"
                         required
                         value={challenge}
                         onChange={(e) => {
-                          const newChallenges = [...onboardingChallenges]
-                          newChallenges[idx] = e.target.value
-                          setOnboardingChallenges(newChallenges)
+                          const newChallenges = [...onboardingChallenges];
+                          newChallenges[idx] = e.target.value;
+                          setOnboardingChallenges(newChallenges);
                         }}
                         className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-sm text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all"
                         placeholder={`Challenge description...`}
@@ -379,7 +455,7 @@ function App() {
             <button
               type="button"
               disabled={onboardingStep === 1 || isOnboardingSubmitting}
-              onClick={() => setOnboardingStep(prev => prev - 1)}
+              onClick={() => setOnboardingStep((prev) => prev - 1)}
               className="px-4 py-2 bg-[#121215] hover:bg-[#18181b] border border-[#1e1e24] text-[#a1a1aa] hover:text-white rounded-lg text-sm transition-all disabled:opacity-30 disabled:pointer-events-none cursor-pointer font-medium"
             >
               Back
@@ -389,10 +465,19 @@ function App() {
               <button
                 type="button"
                 onClick={() => {
-                  if (onboardingStep === 1 && (!onboardingName.trim() || !onboardingTimezone.trim())) return
-                  if (onboardingStep === 2 && !onboardingBuilding.trim()) return
-                  if (onboardingStep === 3 && onboardingGoals.some(g => !g.trim())) return
-                  setOnboardingStep(prev => prev + 1)
+                  if (
+                    onboardingStep === 1 &&
+                    (!onboardingName.trim() || !onboardingTimezone.trim())
+                  )
+                    return;
+                  if (onboardingStep === 2 && !onboardingBuilding.trim())
+                    return;
+                  if (
+                    onboardingStep === 3 &&
+                    onboardingGoals.some((g) => !g.trim())
+                  )
+                    return;
+                  setOnboardingStep((prev) => prev + 1);
                 }}
                 className="px-5 py-2 bg-white hover:bg-zinc-100 text-zinc-950 font-medium rounded-lg text-sm transition-all cursor-pointer"
               >
@@ -401,33 +486,36 @@ function App() {
             ) : (
               <button
                 type="button"
-                disabled={isOnboardingSubmitting || onboardingChallenges.some(c => !c.trim())}
+                disabled={
+                  isOnboardingSubmitting ||
+                  onboardingChallenges.some((c) => !c.trim())
+                }
                 onClick={async () => {
-                  setIsOnboardingSubmitting(true)
+                  setIsOnboardingSubmitting(true);
                   const success = await submitOnboarding(
                     onboardingName,
                     onboardingTimezone,
                     onboardingBuilding,
                     onboardingGoals,
-                    onboardingChallenges
-                  )
-                  setIsOnboardingSubmitting(false)
+                    onboardingChallenges,
+                  );
+                  setIsOnboardingSubmitting(false);
                   if (success) {
-                    setCurrentView('dashboard')
+                    setCurrentView("dashboard");
                   }
                 }}
                 className="px-5 py-2 bg-[#a78bfa] hover:bg-[#906ffa] text-white font-medium rounded-lg text-sm transition-all disabled:opacity-55 cursor-pointer"
               >
-                {isOnboardingSubmitting ? "Configuring workspace..." : "Initialize workspace"}
+                {isOnboardingSubmitting
+                  ? "Configuring workspace..."
+                  : "Initialize workspace"}
               </button>
             )}
           </div>
         </div>
       </div>
-    )
+    );
   }
-
-
 
   // Authenticated Dashboard & Explorer layout
   return (
@@ -437,7 +525,9 @@ function App() {
         <div>
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-extrabold tracking-widest text-white m-0">AURA</h1>
+            <h1 className="text-2xl font-extrabold tracking-widest text-white m-0">
+              AURA
+            </h1>
             {activeContext && (
               <span className="text-xs bg-[#1f1f23] text-[#a78bfa] px-2.5 py-1 rounded-full border border-[#2e2e33]">
                 {activeContext.name}
@@ -447,14 +537,14 @@ function App() {
 
           {/* Navigation Links */}
           <nav className="space-y-1.5">
-            {navItems.map(item => (
+            {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setCurrentView(item.id as any)}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                  currentView === item.id 
-                    ? 'bg-[#18181b] text-white border border-[#27272a]' 
-                    : 'text-[#a1a1aa] hover:bg-[#121214] hover:text-[#e4e4e7]'
+                  currentView === item.id
+                    ? "bg-[#18181b] text-white border border-[#27272a]"
+                    : "text-[#a1a1aa] hover:bg-[#121214] hover:text-[#e4e4e7]"
                 }`}
               >
                 {item.label}
@@ -466,10 +556,14 @@ function App() {
         {/* User Session Profile */}
         <div className="mt-8 pt-6 border-t border-[#1e1e24] flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-xs font-semibold text-white">{user?.display_name || "Harsha"}</span>
-            <span className="text-[11px] text-[#71717a]">{user?.email || "harsha@aura.run"}</span>
+            <span className="text-xs font-semibold text-white">
+              {user?.display_name || "Harsha"}
+            </span>
+            <span className="text-[11px] text-[#71717a]">
+              {user?.email || "harsha@aura.run"}
+            </span>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="text-xs text-[#a1a1aa] hover:text-white transition-colors cursor-pointer"
           >
@@ -480,31 +574,51 @@ function App() {
 
       {/* Main Content Area */}
       <main className="flex-grow p-6 md:p-10 max-w-5xl mx-auto w-full">
-        {currentView === 'dashboard' && (
+        {currentView === "dashboard" && (
           <div className="space-y-8 animate-fade-in">
             {/* Greeting Header */}
             <div>
-              <h2 className="text-3xl font-semibold tracking-tight text-white">Good Morning Harsha</h2>
-              <p className="text-sm text-[#71717a] mt-1">Here is your daily cognitive digest.</p>
+              <h2 className="text-3xl font-semibold tracking-tight text-white">
+                Good Morning Harsha
+              </h2>
+              <p className="text-sm text-[#71717a] mt-1">
+                Here is your daily cognitive digest.
+              </p>
             </div>
 
             {/* KPI Cards Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-[#0c0c0e] border border-[#1e1e24] p-5 rounded-lg flex flex-col justify-between">
-                <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Projects</span>
-                <span className="text-3xl font-bold text-white mt-2">{activeProjectsCount}</span>
+                <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                  Projects
+                </span>
+                <span className="text-3xl font-bold text-white mt-2">
+                  {activeProjectsCount}
+                </span>
               </div>
               <div className="bg-[#0c0c0e] border border-[#1e1e24] p-5 rounded-lg flex flex-col justify-between">
-                <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Tasks</span>
-                <span className="text-3xl font-bold text-white mt-2">{openTasksCount}</span>
+                <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                  Tasks
+                </span>
+                <span className="text-3xl font-bold text-white mt-2">
+                  {openTasksCount}
+                </span>
               </div>
               <div className="bg-[#0c0c0e] border border-[#1e1e24] p-5 rounded-lg flex flex-col justify-between">
-                <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Deadlines</span>
-                <span className="text-3xl font-bold text-white mt-2">{upcomingDeadlinesCount}</span>
+                <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                  Deadlines
+                </span>
+                <span className="text-3xl font-bold text-white mt-2">
+                  {upcomingDeadlinesCount}
+                </span>
               </div>
               <div className="bg-[#0c0c0e] border border-[#1e1e24] p-5 rounded-lg flex flex-col justify-between">
-                <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Decisions</span>
-                <span className="text-3xl font-bold text-white mt-2">{recentDecisionsCount}</span>
+                <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                  Decisions
+                </span>
+                <span className="text-3xl font-bold text-white mt-2">
+                  {recentDecisionsCount}
+                </span>
               </div>
             </div>
 
@@ -512,14 +626,16 @@ function App() {
             <div className="bg-[#0c0c0e] border border-[#1e1e24] rounded-lg overflow-hidden">
               {/* Header Tab Toggles */}
               <div className="border-b border-[#1e1e24] bg-[#0e0e11] px-6 py-4 flex items-center justify-between">
-                <span className="text-sm font-semibold tracking-tight text-white uppercase tracking-wider">Executive Brief</span>
+                <span className="text-sm font-semibold tracking-tight text-white uppercase tracking-wider">
+                  Executive Brief
+                </span>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setShowRawBrief(false)}
                     className={`text-xs px-3 py-1.5 rounded transition-all cursor-pointer ${
-                      !showRawBrief 
-                        ? 'bg-[#18181b] text-white border border-[#27272a]' 
-                        : 'text-[#a1a1aa] hover:text-white'
+                      !showRawBrief
+                        ? "bg-[#18181b] text-white border border-[#27272a]"
+                        : "text-[#a1a1aa] hover:text-white"
                     }`}
                   >
                     Structured
@@ -527,9 +643,9 @@ function App() {
                   <button
                     onClick={() => setShowRawBrief(true)}
                     className={`text-xs px-3 py-1.5 rounded transition-all cursor-pointer ${
-                      showRawBrief 
-                        ? 'bg-[#18181b] text-white border border-[#27272a]' 
-                        : 'text-[#a1a1aa] hover:text-white'
+                      showRawBrief
+                        ? "bg-[#18181b] text-white border border-[#27272a]"
+                        : "text-[#a1a1aa] hover:text-white"
                     }`}
                   >
                     Raw View
@@ -547,25 +663,40 @@ function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Active Context */}
                     <div className="space-y-2 border-b md:border-b-0 md:border-r border-[#1e1e24] pb-6 md:pb-0 md:pr-6">
-                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Current Context</h4>
-                      <p className="text-sm font-medium text-white">{activeContext?.name || "No Active Context"}</p>
-                      <p className="text-xs text-[#a1a1aa]">{activeContext?.description}</p>
+                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                        Current Context
+                      </h4>
+                      <p className="text-sm font-medium text-white">
+                        {activeContext?.name || "No Active Context"}
+                      </p>
+                      <p className="text-xs text-[#a1a1aa]">
+                        {activeContext?.description}
+                      </p>
                     </div>
 
                     {/* Active Projects */}
                     <div className="space-y-2">
-                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Active Projects</h4>
+                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                        Active Projects
+                      </h4>
                       {brief?.structured_brief.active_projects.length ? (
                         <ul className="space-y-1.5 list-none p-0 m-0">
-                          {brief.structured_brief.active_projects.map((proj, idx) => (
-                            <li key={idx} className="text-sm text-white flex items-center">
-                              <span className="h-1.5 w-1.5 rounded-full bg-[#a78bfa] mr-2"></span>
-                              {proj}
-                            </li>
-                          ))}
+                          {brief.structured_brief.active_projects.map(
+                            (proj, idx) => (
+                              <li
+                                key={idx}
+                                className="text-sm text-white flex items-center"
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#a78bfa] mr-2"></span>
+                                {proj}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       ) : (
-                        <p className="text-xs text-[#71717a]">No active projects.</p>
+                        <p className="text-xs text-[#71717a]">
+                          No active projects.
+                        </p>
                       )}
                     </div>
 
@@ -573,40 +704,58 @@ function App() {
 
                     {/* Top Priorities */}
                     <div className="space-y-2">
-                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Top Priorities</h4>
+                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                        Top Priorities
+                      </h4>
                       {brief?.structured_brief.top_priorities.length ? (
                         <ul className="space-y-2 list-none p-0 m-0">
-                          {brief.structured_brief.top_priorities.map((item, idx) => (
-                            <li key={idx} className="text-sm text-[#e4e4e7] flex items-start">
-                              <span className="text-[#a78bfa] mr-2">⚡</span>
-                              {item}
-                            </li>
-                          ))}
+                          {brief.structured_brief.top_priorities.map(
+                            (item, idx) => (
+                              <li
+                                key={idx}
+                                className="text-sm text-[#e4e4e7] flex items-start"
+                              >
+                                <span className="text-[#a78bfa] mr-2">⚡</span>
+                                {item}
+                              </li>
+                            ),
+                          )}
                         </ul>
                       ) : (
-                        <p className="text-xs text-[#71717a]">No direct priorities.</p>
+                        <p className="text-xs text-[#71717a]">
+                          No direct priorities.
+                        </p>
                       )}
                     </div>
 
                     {/* Open Tasks */}
                     <div className="space-y-2">
-                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Open Tasks</h4>
-                      {tasks.filter(t => t.status === "pending").length ? (
+                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                        Open Tasks
+                      </h4>
+                      {tasks.filter((t) => t.status === "pending").length ? (
                         <ul className="space-y-2 list-none p-0 m-0">
-                          {tasks.filter(t => t.status === "pending").map((task) => (
-                            <li key={task.id} className="text-sm text-[#e4e4e7] flex items-center">
-                              <input 
-                                type="checkbox" 
-                                checked={false}
-                                onChange={() => toggleTaskStatus(task.id)}
-                                className="mr-2 h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-[#8b5cf6] focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                              />
-                              {task.task}
-                            </li>
-                          ))}
+                          {tasks
+                            .filter((t) => t.status === "pending")
+                            .map((task) => (
+                              <li
+                                key={task.id}
+                                className="text-sm text-[#e4e4e7] flex items-center"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={false}
+                                  onChange={() => toggleTaskStatus(task.id)}
+                                  className="mr-2 h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-[#8b5cf6] focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                                />
+                                {task.task}
+                              </li>
+                            ))}
                         </ul>
                       ) : (
-                        <p className="text-xs text-[#71717a]">No pending tasks.</p>
+                        <p className="text-xs text-[#71717a]">
+                          No pending tasks.
+                        </p>
                       )}
                     </div>
 
@@ -614,35 +763,50 @@ function App() {
 
                     {/* Upcoming Deadlines */}
                     <div className="space-y-2">
-                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Upcoming Deadlines</h4>
+                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                        Upcoming Deadlines
+                      </h4>
                       {deadlines.length ? (
                         <ul className="space-y-2 list-none p-0 m-0">
                           {deadlines.map((dl) => (
-                            <li key={dl.id} className="text-sm text-[#e4e4e7] flex items-center">
+                            <li
+                              key={dl.id}
+                              className="text-sm text-[#e4e4e7] flex items-center"
+                            >
                               <span className="text-red-400 mr-2">📅</span>
-                              {dl.title} (due {new Date(dl.due_at).toLocaleDateString()})
+                              {dl.title} (due{" "}
+                              {new Date(dl.due_at).toLocaleDateString()})
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-xs text-[#71717a]">No upcoming deadlines.</p>
+                        <p className="text-xs text-[#71717a]">
+                          No upcoming deadlines.
+                        </p>
                       )}
                     </div>
 
                     {/* Recent Decisions */}
                     <div className="space-y-2">
-                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Recent Decisions</h4>
+                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                        Recent Decisions
+                      </h4>
                       {decisions.length ? (
                         <ul className="space-y-2 list-none p-0 m-0">
                           {decisions.map((dec) => (
-                            <li key={dec.id} className="text-sm text-[#e4e4e7] flex items-start">
+                            <li
+                              key={dec.id}
+                              className="text-sm text-[#e4e4e7] flex items-start"
+                            >
                               <span className="text-[#a78bfa] mr-2">✓</span>
                               {dec.chosen_option}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-xs text-[#71717a]">No decisions logged recently.</p>
+                        <p className="text-xs text-[#71717a]">
+                          No decisions logged recently.
+                        </p>
                       )}
                     </div>
 
@@ -650,15 +814,24 @@ function App() {
 
                     {/* Suggested Next Action */}
                     <div className="md:col-span-2 space-y-2 bg-[#121215] border border-[#27272a] p-4 rounded-lg">
-                      <h4 className="text-xs font-semibold text-[#a78bfa] uppercase tracking-wider">Suggested Next Action</h4>
-                      {brief?.structured_brief.suggested_next_actions.map((act, idx) => (
-                        <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
-                          <p className="text-sm font-medium text-white">{act}</p>
-                          <button className="bg-[#1c1917] hover:bg-[#292524] text-xs font-medium text-white px-3.5 py-1.5 rounded border border-[#44403c] transition-colors self-start md:self-auto cursor-pointer">
-                            Action Completed
-                          </button>
-                        </div>
-                      ))}
+                      <h4 className="text-xs font-semibold text-[#a78bfa] uppercase tracking-wider">
+                        Suggested Next Action
+                      </h4>
+                      {brief?.structured_brief.suggested_next_actions.map(
+                        (act, idx) => (
+                          <div
+                            key={idx}
+                            className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2"
+                          >
+                            <p className="text-sm font-medium text-white">
+                              {act}
+                            </p>
+                            <button className="bg-[#1c1917] hover:bg-[#292524] text-xs font-medium text-white px-3.5 py-1.5 rounded border border-[#44403c] transition-colors self-start md:self-auto cursor-pointer">
+                              Action Completed
+                            </button>
+                          </div>
+                        ),
+                      )}
                     </div>
                   </div>
                 )}
@@ -667,14 +840,22 @@ function App() {
                 {brief && (
                   <div className="mt-8 pt-6 border-t border-[#1e1e24] space-y-4">
                     <div className="flex flex-col space-y-1">
-                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Daily Brief Evaluation</h4>
-                      <p className="text-[11px] text-[#a1a1aa]">Help AURA learn what information makes your morning better.</p>
+                      <h4 className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                        Daily Brief Evaluation
+                      </h4>
+                      <p className="text-[11px] text-[#a1a1aa]">
+                        Help AURA learn what information makes your morning
+                        better.
+                      </p>
                     </div>
 
                     {feedbackSubmitted ? (
                       <div className="bg-[rgba(16,185,129,0.06)] border border-[#10b981]/20 text-[#10b981] text-xs px-4 py-3 rounded-lg flex items-center justify-between">
-                        <span>✓ Feedback recorded in database. Thank you for dogfooding AURA!</span>
-                        <button 
+                        <span>
+                          ✓ Feedback recorded in database. Thank you for
+                          dogfooding AURA!
+                        </span>
+                        <button
                           type="button"
                           onClick={() => setFeedbackSubmitted(false)}
                           className="text-[#a78bfa] hover:text-white underline text-[10px] cursor-pointer bg-transparent border-0 outline-none"
@@ -687,11 +868,11 @@ function App() {
                         <div className="flex items-center space-x-3">
                           <button
                             type="button"
-                            onClick={() => setFeedbackRating('useful')}
+                            onClick={() => setFeedbackRating("useful")}
                             className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all cursor-pointer text-xs font-medium ${
-                              feedbackRating === 'useful'
-                                ? 'bg-[rgba(16,185,129,0.1)] border-[#10b981] text-white font-semibold'
-                                : 'bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#10b981]/40 hover:text-white'
+                              feedbackRating === "useful"
+                                ? "bg-[rgba(16,185,129,0.1)] border-[#10b981] text-white font-semibold"
+                                : "bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#10b981]/40 hover:text-white"
                             }`}
                           >
                             <span>👍</span>
@@ -699,11 +880,11 @@ function App() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setFeedbackRating('neutral')}
+                            onClick={() => setFeedbackRating("neutral")}
                             className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all cursor-pointer text-xs font-medium ${
-                              feedbackRating === 'neutral'
-                                ? 'bg-[rgba(245,158,11,0.1)] border-[#f59e0b] text-white font-semibold'
-                                : 'bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#f59e0b]/40 hover:text-white'
+                              feedbackRating === "neutral"
+                                ? "bg-[rgba(245,158,11,0.1)] border-[#f59e0b] text-white font-semibold"
+                                : "bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#f59e0b]/40 hover:text-white"
                             }`}
                           >
                             <span>😐</span>
@@ -711,11 +892,11 @@ function App() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setFeedbackRating('not_useful')}
+                            onClick={() => setFeedbackRating("not_useful")}
                             className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all cursor-pointer text-xs font-medium ${
-                              feedbackRating === 'not_useful'
-                                ? 'bg-[rgba(239,68,68,0.1)] border-[#ef4444] text-white font-semibold'
-                                : 'bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#ef4444]/40 hover:text-white'
+                              feedbackRating === "not_useful"
+                                ? "bg-[rgba(239,68,68,0.1)] border-[#ef4444] text-white font-semibold"
+                                : "bg-[#121215] border-[#1e1e24] text-[#a1a1aa] hover:border-[#ef4444]/40 hover:text-white"
                             }`}
                           >
                             <span>👎</span>
@@ -728,24 +909,32 @@ function App() {
                             <textarea
                               rows={2}
                               value={feedbackComment}
-                              onChange={(e) => setFeedbackComment(e.target.value)}
+                              onChange={(e) =>
+                                setFeedbackComment(e.target.value)
+                              }
                               placeholder="Add optional notes (e.g. what was useful or annoying)..."
                               className="w-full px-3 py-2 bg-[#060608] border border-[#1e1e24] rounded-lg text-xs text-white focus:outline-none focus:border-[#a78bfa] focus:ring-1 focus:ring-[#a78bfa] placeholder-[#71717a] transition-all resize-none"
                             />
                             <button
                               type="button"
                               onClick={async () => {
-                                setIsSubmittingFeedback(true)
-                                const success = await submitBriefFeedback(brief.id, feedbackRating, feedbackComment)
-                                setIsSubmittingFeedback(false)
+                                setIsSubmittingFeedback(true);
+                                const success = await submitBriefFeedback(
+                                  brief.id,
+                                  feedbackRating,
+                                  feedbackComment,
+                                );
+                                setIsSubmittingFeedback(false);
                                 if (success) {
-                                  setFeedbackSubmitted(true)
+                                  setFeedbackSubmitted(true);
                                 }
                               }}
                               disabled={isSubmittingFeedback}
                               className="bg-white hover:bg-zinc-100 text-zinc-950 font-semibold px-4 py-1.5 rounded-lg text-xs transition-all disabled:opacity-55 cursor-pointer"
                             >
-                              {isSubmittingFeedback ? "Submitting..." : "Submit Feedback"}
+                              {isSubmittingFeedback
+                                ? "Submitting..."
+                                : "Submit Feedback"}
                             </button>
                           </div>
                         )}
@@ -757,7 +946,12 @@ function App() {
 
               {/* Footer info */}
               <div className="bg-[#0e0e11] border-t border-[#1e1e24] px-6 py-4 flex items-center justify-between text-xs text-[#71717a]">
-                <span>Last Updated: {brief ? new Date(brief.created_at).toLocaleString() : "Never"}</span>
+                <span>
+                  Last Updated:{" "}
+                  {brief
+                    ? new Date(brief.created_at).toLocaleString()
+                    : "Never"}
+                </span>
                 <span>Deterministic pipeline V1.0</span>
               </div>
             </div>
@@ -765,12 +959,16 @@ function App() {
         )}
 
         {/* Knowledge Explorer View */}
-        {currentView === 'explorer' && (
+        {currentView === "explorer" && (
           <div className="space-y-6 animate-fade-in">
             {/* Page Header */}
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white m-0">Knowledge Explorer</h2>
-              <p className="text-sm text-[#71717a] mt-1">Browse, filter, and search extracted cognitive entities.</p>
+              <h2 className="text-2xl font-bold tracking-tight text-white m-0">
+                Knowledge Explorer
+              </h2>
+              <p className="text-sm text-[#71717a] mt-1">
+                Browse, filter, and search extracted cognitive entities.
+              </p>
             </div>
 
             {/* Search & Filter Bar */}
@@ -778,8 +976,18 @@ function App() {
               {/* Search Bar */}
               <div className="relative flex-grow">
                 <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#71717a]">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </span>
                 <input
@@ -794,21 +1002,27 @@ function App() {
               {/* Dropdown Filters */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center space-x-1.5">
-                  <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Context:</span>
+                  <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                    Context:
+                  </span>
                   <select
                     value={contextFilter}
                     onChange={(e) => setContextFilter(e.target.value)}
                     className="bg-[#060608] border border-[#1e1e24] rounded-lg text-xs text-white px-3 py-1.5 focus:outline-none focus:border-[#a78bfa] cursor-pointer"
                   >
                     <option value="all">All Contexts</option>
-                    {contexts.map(ctx => (
-                      <option key={ctx.id} value={ctx.id}>{ctx.name}</option>
+                    {contexts.map((ctx) => (
+                      <option key={ctx.id} value={ctx.id}>
+                        {ctx.name}
+                      </option>
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="flex items-center space-x-1.5">
-                  <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">Sort Date:</span>
+                  <span className="text-xs font-semibold text-[#71717a] uppercase tracking-wider">
+                    Sort Date:
+                  </span>
                   <select
                     value={dateSort}
                     onChange={(e) => setDateSort(e.target.value as any)}
@@ -823,23 +1037,31 @@ function App() {
 
             {/* Tabs Row */}
             <div className="border-b border-[#1e1e24] flex space-x-6 text-sm overflow-x-auto scrollbar-none">
-              {(['facts', 'decisions', 'tasks', 'deadlines', 'contexts'] as const).map(tab => {
+              {(
+                [
+                  "facts",
+                  "decisions",
+                  "tasks",
+                  "deadlines",
+                  "contexts",
+                ] as const
+              ).map((tab) => {
                 const getCount = () => {
-                  if (tab === 'facts') return filteredFacts.length
-                  if (tab === 'decisions') return filteredDecisions.length
-                  if (tab === 'tasks') return filteredTasks.length
-                  if (tab === 'deadlines') return filteredDeadlines.length
-                  return filteredContexts.length
-                }
-                const label = tab.charAt(0).toUpperCase() + tab.slice(1)
+                  if (tab === "facts") return filteredFacts.length;
+                  if (tab === "decisions") return filteredDecisions.length;
+                  if (tab === "tasks") return filteredTasks.length;
+                  if (tab === "deadlines") return filteredDeadlines.length;
+                  return filteredContexts.length;
+                };
+                const label = tab.charAt(0).toUpperCase() + tab.slice(1);
                 return (
                   <button
                     key={tab}
                     onClick={() => setExplorerTab(tab)}
                     className={`pb-3 font-medium transition-all border-b-2 relative shrink-0 cursor-pointer ${
-                      explorerTab === tab 
-                        ? 'border-[#a78bfa] text-white' 
-                        : 'border-transparent text-[#71717a] hover:text-[#e4e4e7]'
+                      explorerTab === tab
+                        ? "border-[#a78bfa] text-white"
+                        : "border-transparent text-[#71717a] hover:text-[#e4e4e7]"
                     }`}
                   >
                     <span>{label}</span>
@@ -847,14 +1069,14 @@ function App() {
                       {getCount()}
                     </span>
                   </button>
-                )
+                );
               })}
             </div>
 
             {/* Tab Contents */}
             <div className="mt-4">
               {/* FACTS TAB */}
-              {explorerTab === 'facts' && (
+              {explorerTab === "facts" && (
                 <div className="space-y-4">
                   {filteredFacts.length === 0 ? (
                     <div className="text-center py-12 border border-[#1e1e24] border-dashed rounded-lg text-[#71717a] text-sm bg-[#0c0c0e]">
@@ -873,25 +1095,34 @@ function App() {
                             </tr>
                           </thead>
                           <tbody>
-                            {filteredFacts.map(fact => (
-                              <tr key={fact.id} className="border-b border-[#0e0e11] last:border-b-0 hover:bg-[#09090b] transition-colors">
+                            {filteredFacts.map((fact) => (
+                              <tr
+                                key={fact.id}
+                                className="border-b border-[#0e0e11] last:border-b-0 hover:bg-[#09090b] transition-colors"
+                              >
                                 <td className="py-4 px-6 font-medium text-white">
                                   <span className="bg-[#18181b] text-[#a78bfa] border border-[#27272a] px-2.5 py-0.5 rounded text-xs">
                                     {fact.entity}
                                   </span>
                                 </td>
-                                <td className="py-4 px-6 text-[#e4e4e7] max-w-md">{fact.value}</td>
+                                <td className="py-4 px-6 text-[#e4e4e7] max-w-md">
+                                  {fact.value}
+                                </td>
                                 <td className="py-4 px-6">
-                                  <span className={`text-xs px-2.5 py-0.5 rounded-full border ${
-                                    fact.confidence >= 0.9 
-                                      ? 'bg-[rgba(16,185,129,0.06)] text-[#10b981] border-[#10b981]/20' 
-                                      : 'bg-[rgba(245,158,11,0.06)] text-[#f59e0b] border-[#f59e0b]/20'
-                                  }`}>
+                                  <span
+                                    className={`text-xs px-2.5 py-0.5 rounded-full border ${
+                                      fact.confidence >= 0.9
+                                        ? "bg-[rgba(16,185,129,0.06)] text-[#10b981] border-[#10b981]/20"
+                                        : "bg-[rgba(245,158,11,0.06)] text-[#f59e0b] border-[#f59e0b]/20"
+                                    }`}
+                                  >
                                     {Math.round(fact.confidence * 100)}%
                                   </span>
                                 </td>
                                 <td className="py-4 px-6 text-xs text-[#71717a]">
-                                  {new Date(fact.created_at).toLocaleDateString()}
+                                  {new Date(
+                                    fact.created_at,
+                                  ).toLocaleDateString()}
                                 </td>
                               </tr>
                             ))}
@@ -904,7 +1135,7 @@ function App() {
               )}
 
               {/* DECISIONS TAB */}
-              {explorerTab === 'decisions' && (
+              {explorerTab === "decisions" && (
                 <div className="space-y-4">
                   {filteredDecisions.length === 0 ? (
                     <div className="text-center py-12 border border-[#1e1e24] border-dashed rounded-lg text-[#71717a] text-sm bg-[#0c0c0e]">
@@ -912,17 +1143,29 @@ function App() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 gap-4">
-                      {filteredDecisions.map(dec => (
-                        <div key={dec.id} className="bg-[#0c0c0e] border border-[#1e1e24] p-5 rounded-lg space-y-3 hover:border-zinc-700 transition-colors">
+                      {filteredDecisions.map((dec) => (
+                        <div
+                          key={dec.id}
+                          className="bg-[#0c0c0e] border border-[#1e1e24] p-5 rounded-lg space-y-3 hover:border-zinc-700 transition-colors"
+                        >
                           <div className="flex items-start justify-between">
-                            <p className="text-sm font-medium text-white leading-relaxed">{dec.chosen_option}</p>
+                            <p className="text-sm font-medium text-white leading-relaxed">
+                              {dec.chosen_option}
+                            </p>
                             <span className="text-xs px-2.5 py-0.5 rounded-full border bg-[rgba(16,185,129,0.06)] text-[#10b981] border-[#10b981]/20 shrink-0 ml-4 font-mono">
                               {Math.round(dec.confidence * 100)}% confidence
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-xs text-[#71717a] pt-2 border-t border-[#1e1e24]">
-                            <span>Context: {contexts.find(c => c.id === dec.context_id)?.name || "General"}</span>
-                            <span>Logged {new Date(dec.created_at).toLocaleDateString()}</span>
+                            <span>
+                              Context:{" "}
+                              {contexts.find((c) => c.id === dec.context_id)
+                                ?.name || "General"}
+                            </span>
+                            <span>
+                              Logged{" "}
+                              {new Date(dec.created_at).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                       ))}
@@ -932,7 +1175,7 @@ function App() {
               )}
 
               {/* TASKS TAB */}
-              {explorerTab === 'tasks' && (
+              {explorerTab === "tasks" && (
                 <div className="space-y-4">
                   {filteredTasks.length === 0 ? (
                     <div className="text-center py-12 border border-[#1e1e24] border-dashed rounded-lg text-[#71717a] text-sm bg-[#0c0c0e]">
@@ -940,8 +1183,11 @@ function App() {
                     </div>
                   ) : (
                     <div className="bg-[#0c0c0e] border border-[#1e1e24] rounded-lg overflow-hidden">
-                      {filteredTasks.map(task => (
-                        <div key={task.id} className="border-b border-[#1e1e24] last:border-b-0 p-4 flex items-center justify-between hover:bg-[#09090b] transition-colors">
+                      {filteredTasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="border-b border-[#1e1e24] last:border-b-0 p-4 flex items-center justify-between hover:bg-[#09090b] transition-colors"
+                        >
                           <div className="flex items-center space-x-3">
                             <input
                               type="checkbox"
@@ -949,16 +1195,20 @@ function App() {
                               onChange={() => toggleTaskStatus(task.id)}
                               className="h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-[#8b5cf6] focus:ring-0 focus:ring-offset-0 cursor-pointer"
                             />
-                            <span className={`text-sm ${task.status === "completed" ? 'line-through text-[#71717a]' : 'text-[#e4e4e7]'}`}>
+                            <span
+                              className={`text-sm ${task.status === "completed" ? "line-through text-[#71717a]" : "text-[#e4e4e7]"}`}
+                            >
                               {task.task}
                             </span>
                           </div>
                           <div className="flex items-center space-x-3 text-xs">
-                            <span className={`px-2.5 py-0.5 rounded border text-[10px] font-semibold uppercase tracking-wider ${
-                              task.status === "completed" 
-                                ? 'bg-zinc-900 text-[#71717a] border-zinc-800' 
-                                : 'bg-[#18181b] text-[#a78bfa] border-[#27272a]'
-                            }`}>
+                            <span
+                              className={`px-2.5 py-0.5 rounded border text-[10px] font-semibold uppercase tracking-wider ${
+                                task.status === "completed"
+                                  ? "bg-zinc-900 text-[#71717a] border-zinc-800"
+                                  : "bg-[#18181b] text-[#a78bfa] border-[#27272a]"
+                              }`}
+                            >
                               {task.status}
                             </span>
                             <span className="text-[#71717a] font-mono">
@@ -973,7 +1223,7 @@ function App() {
               )}
 
               {/* DEADLINES TAB */}
-              {explorerTab === 'deadlines' && (
+              {explorerTab === "deadlines" && (
                 <div className="space-y-4">
                   {filteredDeadlines.length === 0 ? (
                     <div className="text-center py-12 border border-[#1e1e24] border-dashed rounded-lg text-[#71717a] text-sm bg-[#0c0c0e]">
@@ -981,25 +1231,39 @@ function App() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {filteredDeadlines.map(dl => {
-                        const isOverdue = new Date(dl.due_at).getTime() < Date.now()
+                      {filteredDeadlines.map((dl) => {
+                        const isOverdue =
+                          new Date(dl.due_at).getTime() < Date.now();
                         return (
-                          <div key={dl.id} className="bg-[#0c0c0e] border border-[#1e1e24] p-5 rounded-lg flex flex-col justify-between hover:border-zinc-700 transition-colors">
+                          <div
+                            key={dl.id}
+                            className="bg-[#0c0c0e] border border-[#1e1e24] p-5 rounded-lg flex flex-col justify-between hover:border-zinc-700 transition-colors"
+                          >
                             <div>
-                              <h4 className="text-sm font-semibold text-white leading-relaxed">{dl.title}</h4>
+                              <h4 className="text-sm font-semibold text-white leading-relaxed">
+                                {dl.title}
+                              </h4>
                               <div className="flex items-center space-x-2 mt-2">
                                 <span className="text-xs">📅</span>
-                                <span className={`text-xs ${isOverdue ? 'text-red-400 font-medium' : 'text-[#a1a1aa]'}`}>
-                                  {isOverdue ? 'Overdue: ' : 'Due: '} {new Date(dl.due_at).toLocaleString()}
+                                <span
+                                  className={`text-xs ${isOverdue ? "text-red-400 font-medium" : "text-[#a1a1aa]"}`}
+                                >
+                                  {isOverdue ? "Overdue: " : "Due: "}{" "}
+                                  {new Date(dl.due_at).toLocaleString()}
                                 </span>
                               </div>
                             </div>
                             <div className="flex items-center justify-between text-xs text-[#71717a] pt-4 mt-4 border-t border-[#1e1e24]">
-                              <span>Confidence: {Math.round(dl.confidence * 100)}%</span>
-                              <span>Logged {new Date(dl.created_at).toLocaleDateString()}</span>
+                              <span>
+                                Confidence: {Math.round(dl.confidence * 100)}%
+                              </span>
+                              <span>
+                                Logged{" "}
+                                {new Date(dl.created_at).toLocaleDateString()}
+                              </span>
                             </div>
                           </div>
-                        )
+                        );
                       })}
                     </div>
                   )}
@@ -1007,7 +1271,7 @@ function App() {
               )}
 
               {/* CONTEXTS TAB */}
-              {explorerTab === 'contexts' && (
+              {explorerTab === "contexts" && (
                 <div className="space-y-4">
                   {filteredContexts.length === 0 ? (
                     <div className="text-center py-12 border border-[#1e1e24] border-dashed rounded-lg text-[#71717a] text-sm bg-[#0c0c0e]">
@@ -1015,26 +1279,38 @@ function App() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {filteredContexts.map(ctx => (
-                        <div key={ctx.id} className={`p-5 rounded-lg border flex flex-col justify-between hover:border-zinc-700 transition-colors ${
-                          ctx.is_active 
-                            ? 'bg-[#0e0e11] border-[#a78bfa]' 
-                            : 'bg-[#0c0c0e] border-[#1e1e24]'
-                        }`}>
+                      {filteredContexts.map((ctx) => (
+                        <div
+                          key={ctx.id}
+                          className={`p-5 rounded-lg border flex flex-col justify-between hover:border-zinc-700 transition-colors ${
+                            ctx.is_active
+                              ? "bg-[#0e0e11] border-[#a78bfa]"
+                              : "bg-[#0c0c0e] border-[#1e1e24]"
+                          }`}
+                        >
                           <div>
                             <div className="flex items-center justify-between">
-                              <h4 className="text-sm font-semibold text-white">{ctx.name}</h4>
+                              <h4 className="text-sm font-semibold text-white">
+                                {ctx.name}
+                              </h4>
                               {ctx.is_active && (
                                 <span className="text-[10px] bg-[rgba(167,139,250,0.15)] text-[#a78bfa] border border-[#a78bfa]/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold">
                                   Active Context
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-[#a1a1aa] mt-2 line-clamp-2 leading-relaxed">{ctx.description}</p>
+                            <p className="text-xs text-[#a1a1aa] mt-2 line-clamp-2 leading-relaxed">
+                              {ctx.description}
+                            </p>
                           </div>
                           <div className="flex items-center justify-between text-xs text-[#71717a] pt-4 mt-4 border-t border-[#1e1e24]">
-                            <span>Confidence: {Math.round(ctx.confidence * 100)}%</span>
-                            <span>Created {new Date(ctx.created_at).toLocaleDateString()}</span>
+                            <span>
+                              Confidence: {Math.round(ctx.confidence * 100)}%
+                            </span>
+                            <span>
+                              Created{" "}
+                              {new Date(ctx.created_at).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                       ))}
@@ -1047,12 +1323,10 @@ function App() {
         )}
 
         {/* Capture Session View */}
-        {currentView === 'capture' && (
-          <CaptureSession />
-        )}
+        {currentView === "capture" && <CaptureSession />}
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

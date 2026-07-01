@@ -1,7 +1,7 @@
 import pytest
 from app.extraction.service import ExtractionService
 from app.services.llm import LLMProvider
-from app.extraction.schemas import ExtractionResult
+
 
 class MockLLMProvider(LLMProvider):
     def __init__(self, response_text: str):
@@ -11,6 +11,7 @@ class MockLLMProvider(LLMProvider):
     async def generate_chat(self, messages, format=None):
         self.last_messages = messages
         return self.response_text
+
 
 @pytest.mark.anyio
 async def test_extraction_validation_layer():
@@ -26,11 +27,12 @@ async def test_extraction_validation_layer():
     mock_llm = MockLLMProvider(raw_json)
     service = ExtractionService(llm_provider=mock_llm)
     res, obs = await service.extract_from_message("Test message")
-    
+
     assert len(res.facts) == 1
     assert res.facts[0].value == "AURA"
     assert res.facts[0].confidence == 1.0
     assert len(obs) == 0
+
 
 @pytest.mark.anyio
 async def test_extraction_reject_missing_confidence():
@@ -46,9 +48,10 @@ async def test_extraction_reject_missing_confidence():
     mock_llm = MockLLMProvider(raw_json)
     service = ExtractionService(llm_provider=mock_llm)
     res, obs = await service.extract_from_message("Test message")
-    
+
     assert len(res.facts) == 0
     assert len(obs) == 0
+
 
 @pytest.mark.anyio
 async def test_extraction_reject_invalid_category():
@@ -64,9 +67,10 @@ async def test_extraction_reject_invalid_category():
     mock_llm = MockLLMProvider(raw_json)
     service = ExtractionService(llm_provider=mock_llm)
     res, obs = await service.extract_from_message("Test message")
-    
+
     assert len(res.facts) == 0
     assert len(obs) == 0
+
 
 @pytest.mark.anyio
 async def test_extraction_demote_sub_threshold():
@@ -82,7 +86,7 @@ async def test_extraction_demote_sub_threshold():
     mock_llm = MockLLMProvider(raw_json)
     service = ExtractionService(llm_provider=mock_llm)
     res, obs = await service.extract_from_message("Test message")
-    
+
     assert len(res.facts) == 0
     assert len(obs) == 1
     assert obs[0]["raw_type"] == "FactItem"

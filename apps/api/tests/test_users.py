@@ -12,6 +12,7 @@ from app.models.core import User
 
 MOCK_USER_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 
+
 async def mock_get_current_user_onboarding(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.id == MOCK_USER_ID))
     user = result.scalars().first()
@@ -21,7 +22,7 @@ async def mock_get_current_user_onboarding(db: AsyncSession = Depends(get_db)):
             email="onboard@example.com",
             display_name=None,
             timezone="UTC",
-            onboarding_completed=False
+            onboarding_completed=False,
         )
         db.add(user)
         await db.commit()
@@ -33,11 +34,13 @@ async def mock_get_current_user_onboarding(db: AsyncSession = Depends(get_db)):
         await db.refresh(user)
     return user
 
+
 @pytest.fixture
 def setup_auth_onboarding():
     app.dependency_overrides[get_current_user] = mock_get_current_user_onboarding
     yield
     app.dependency_overrides.clear()
+
 
 @pytest.mark.anyio
 async def test_onboarding_wizard_endpoint(setup_auth_onboarding):
@@ -48,7 +51,7 @@ async def test_onboarding_wizard_endpoint(setup_auth_onboarding):
             "timezone": "Asia/Kolkata",
             "what_are_you_building": "AURA AI Platform",
             "top_goals": ["Ship Sprint 5", "Verify capture loops", ""],
-            "biggest_challenges": ["Time constraints", "Ollama latency"]
+            "biggest_challenges": ["Time constraints", "Ollama latency"],
         }
         response = await ac.post("/api/v1/users/me/onboarding", json=payload)
         assert response.status_code == 200

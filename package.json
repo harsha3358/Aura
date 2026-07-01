@@ -1,5 +1,26 @@
 {
+  "name": "aura-root",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "verify": "node scripts/verify_project.js",
+    "verify:release": "node scripts/verify_project.js --release"
+  },
   "dependencies": {
     "playwright": "^1.61.1"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11"
+  },
+  "lint-staged": {
+    "apps/web/src/**/*.{ts,tsx}": [
+      "npx oxlint",
+      "npx prettier --write"
+    ],
+    "apps/api/**/*.py": [
+      "ruff check --fix",
+      "ruff format"
+    ]
   }
 }

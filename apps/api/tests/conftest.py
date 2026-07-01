@@ -1,9 +1,11 @@
 import pytest
 from app.dependencies import engine
 
+
 @pytest.fixture(scope="session")
 def anyio_backend():
     return "asyncio"
+
 
 @pytest.fixture(autouse=True)
 async def dispose_engine():

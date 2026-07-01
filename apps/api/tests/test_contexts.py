@@ -10,14 +10,18 @@ from app.services.llm import LLMProvider
 MOCK_USER_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 mock_user = User(id=MOCK_USER_ID, email="test@example.com", display_name="Test User")
 
+
 async def mock_get_current_user_dep():
     return mock_user
+
 
 class MockContextLLM(LLMProvider):
     def __init__(self, response_text: str):
         self.response_text = response_text
+
     async def generate_chat(self, messages, format=None):
         return self.response_text
+
 
 @pytest.fixture(autouse=True)
 def setup_auth_override():
@@ -25,14 +29,18 @@ def setup_auth_override():
     yield
     app.dependency_overrides.clear()
 
+
 @pytest.mark.anyio
 async def test_create_and_list_contexts():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        response = await ac.post("/api/v1/contexts", json={
-            "name": "Startup Building",
-            "description": "Building my next startup AURA"
-        })
+        response = await ac.post(
+            "/api/v1/contexts",
+            json={
+                "name": "Startup Building",
+                "description": "Building my next startup AURA",
+            },
+        )
         assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Startup Building"
@@ -46,6 +54,7 @@ async def test_create_and_list_contexts():
         assert len(contexts) >= 1
         assert any(c["id"] == ctx_id for c in contexts)
 
+
 @pytest.mark.anyio
 async def test_context_classifier_match():
     raw_json = """{
@@ -57,15 +66,18 @@ async def test_context_classifier_match():
     }"""
     mock_llm = MockContextLLM(raw_json)
     classifier = ContextClassifier(llm_provider=mock_llm)
-    
+
     existing = [
         Context(name="Startup Building", description="AURA app development"),
-        Context(name="Learning", description="FastAPI and pytest")
+        Context(name="Learning", description="FastAPI and pytest"),
     ]
-    res = await classifier.classify("I am writing the context router code now.", existing)
+    res = await classifier.classify(
+        "I am writing the context router code now.", existing
+    )
     assert res["matched_context_name"] == "Startup Building"
     assert res["shift_detected"] is False
     assert res["new_context"] is None
+
 
 @pytest.mark.anyio
 async def test_context_classifier_shift():
@@ -81,11 +93,11 @@ async def test_context_classifier_shift():
     }"""
     mock_llm = MockContextLLM(raw_json)
     classifier = ContextClassifier(llm_provider=mock_llm)
-    
-    existing = [
-        Context(name="Startup Building", description="AURA app development")
-    ]
-    res = await classifier.classify("I want to read papers on neural net quantization.", existing)
+
+    existing = [Context(name="Startup Building", description="AURA app development")]
+    res = await classifier.classify(
+        "I want to read papers on neural net quantization.", existing
+    )
     assert res["matched_context_name"] is None
     assert res["shift_detected"] is True
     assert res["new_context"]["name"] == "Research"

@@ -11,4 +11,8 @@ dist/
 apps/api/pytest_error.txt
 apps/api/pytest_error_utf8.txt
 scratch/
-
+.coverage
+coverage.xml
+*-report.xml
+validation_screenshots.json
+*.log

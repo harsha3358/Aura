@@ -11,9 +11,10 @@ from app.models.core import User
 security = HTTPBearer()
 settings = get_settings()
 
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> User:
     token = credentials.credentials
     if token == "mock-supabase-jwt-token" or not settings.SUPABASE_JWT_SECRET:
@@ -22,7 +23,13 @@ async def get_current_user(
         result = await db.execute(select(User).where(User.id == user_uuid))
         user = result.scalars().first()
         if user is None:
-            user = User(id=user_uuid, email="harsha@aura.run", display_name="Harsha", timezone="Asia/Kolkata", onboarding_completed=True)
+            user = User(
+                id=user_uuid,
+                email="harsha@aura.run",
+                display_name="Harsha",
+                timezone="Asia/Kolkata",
+                onboarding_completed=True,
+            )
             db.add(user)
             await db.commit()
             await db.refresh(user)
@@ -31,10 +38,10 @@ async def get_current_user(
     try:
         # Supabase signs JWTs with HS256 using the JWT secret
         payload = jwt.decode(
-            token, 
-            settings.SUPABASE_JWT_SECRET, 
+            token,
+            settings.SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
-            options={"verify_aud": False}
+            options={"verify_aud": False},
         )
         user_id = payload.get("sub")
         if user_id is None:
@@ -42,7 +49,7 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authentication credentials",
             )
-            
+
         # Parse user_id as UUID
         try:
             user_uuid = uuid.UUID(user_id)
@@ -51,27 +58,27 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid user ID format",
             )
-            
+
     except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
     # Check if user exists in our DB
     result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalars().first()
-    
+
     if user is None:
-        # According to the PRD: Supabase handles auth. 
+        # According to the PRD: Supabase handles auth.
         # When a user hits the API with a valid Supabase JWT but doesn't exist in our DB,
-        # we might want to create them automatically, or return 401. 
+        # we might want to create them automatically, or return 401.
         # Let's create the user automatically for now based on the JWT payload.
         email = payload.get("email", "")
         user = User(id=user_uuid, email=email)
         db.add(user)
         await db.commit()
         await db.refresh(user)
-        
+
     return user
