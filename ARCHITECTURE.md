@@ -6,6 +6,8 @@
 
 Welcome to the AURA Architecture reference. This document serves as the canonical map for developers, detailing AURA's design patterns, module boundaries, data pipelines, and cognitive agent workflow.
 
+For the guidelines on contributing to this architecture and proposing design changes, please see the **[Contribution Guidelines](CONTRIBUTING.md)**. All significant architectural selections are recorded in our **[ADR Log](docs/adr/README.md)**.
+
 ---
 
 ## Revision History

@@ -2,6 +2,8 @@
 
 This document explains the architecture, jobs, configuration, and troubleshooting steps for AURA's Continuous Integration and Continuous Deployment (CI/CD) pipelines.
 
+For information on setting up your local environment, see the **[Developer Onboarding Guide](DEVELOPER_GUIDE.md)**, and for pull request guidelines, see the **[Contribution Guidelines](../CONTRIBUTING.md)**.
+
 ## Workflow Architecture
 
 The CI pipeline runs on every push and pull request targeting the `main` branch. It uses a parallelized, modular design leveraging GitHub Actions **reusable workflows** to isolate job runtimes and simplify maintenance.

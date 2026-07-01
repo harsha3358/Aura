@@ -133,13 +133,28 @@ uvicorn app.main:app --reload
 
 ---
 
+## Developer Resources & Documentation
+
+To set up AURA locally, run tests, or contribute, please refer to our documentation ecosystem:
+
+* **[Developer Onboarding Guide](docs/DEVELOPER_GUIDE.md)**: Full setup details for databases, backend API, Vite web server, and local Ollama nodes.
+* **[Contributing Guidelines](CONTRIBUTING.md)**: Process guidelines, branch strategies, definition of done, and code review criteria.
+* **[Architecture Specifications](ARCHITECTURE.md)**: System blueprints, DB designs, and routing details.
+* **[CI/CD Pipelines Guide](docs/CI_CD.md)**: Quality gates, Husky hooks, and GitHub Actions details.
+* **[Engineering Standards](docs/ENGINEERING_STANDARDS.md)**: Naming conventions, component structures, and state management rules.
+* **[Architecture Decisions (ADR)](docs/adr/README.md)**: Log of major design and technical selections.
+
+---
+
 ## Testing & Quality Gates
 
-Run the pytest suite to verify routers, models, and validation logic:
+Run the verification suites before committing or staging your code:
 ```bash
-cd apps/api
-.\\venv\\Scripts\\activate
-python -m pytest
+# Run local fast verification gates
+npm run verify
+
+# Run local release verification gates
+npm run verify:release
 ```
 
 ---
@@ -157,3 +172,4 @@ python scripts/evaluate_extraction.py --mock
 ```bash
 python scripts/evaluate_extraction.py
 ```
+
