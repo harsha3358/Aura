@@ -1,0 +1,114 @@
+name: Playwright E2E Smoke Tests
+
+on:
+  workflow_call:
+
+jobs:
+  e2e-test:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        ports:
+          - 5433:5432
+        env:
+          POSTGRES_USER: aura
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: aura_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: 'npm'
+          cache-dependency-path: 'apps/web/package-lock.json'
+
+      - name: Cache Pip Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('apps/api/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Install and setup backend
+      - name: Install Backend Dependencies
+        working-directory: apps/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Alembic Migrations
+        working-directory: apps/api
+        run: alembic upgrade head
+
+      # Install frontend
+      - name: Install Frontend Dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      # Install Playwright
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright Node Package
+        run: npm install
+
+      - name: Install Playwright Chromium Browser
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
+
+      # Run servers in background
+      - name: Start FastAPI Backend Server
+        working-directory: apps/api
+        run: |
+          python -m uvicorn app.main:app --port 8000 &
+        env:
+          DATABASE_URL: postgresql+asyncpg://aura:password@127.0.0.1:5433/aura_db
+
+      - name: Start Vite Frontend Server
+        working-directory: apps/web
+        run: |
+          npm run dev &
+
+      # Wait for servers to be active
+      - name: Wait for Ports (8000 & 5173)
+        run: |
+          npx wait-on -t 30000 http://127.0.0.1:8000/docs http://127.0.0.1:5173
+
+      # Run Playwright screenshots and smoke verification
+      - name: Run Playwright E2E Smoke Tests
+        run: |
+          node scripts/capture_screenshots.js
+
+      # Save screenshots as build artifact
+      - name: Upload Screenshot Evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-screenshots
+          path: |
+            Screenshots/
+            validation_screenshots.json
+            error.log

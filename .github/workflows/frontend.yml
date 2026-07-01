@@ -1,0 +1,42 @@
+name: Frontend Test Suite & Compilation
+
+on:
+  workflow_call:
+
+jobs:
+  frontend-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: 'npm'
+          cache-dependency-path: 'apps/web/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      # Run Vitest with JUnit reporting
+      - name: Run Vitest Suite
+        working-directory: apps/web
+        run: |
+          npx vitest run --reporter=verbose --reporter=junit --outputFile=vitest-report.xml
+
+      # Compile production package
+      - name: Compile Production Bundle
+        working-directory: apps/web
+        run: |
+          npm run build
+
+      - name: Upload Vitest Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vitest-reports
+          path: apps/web/vitest-report.xml

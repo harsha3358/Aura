@@ -1,0 +1,67 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Concurrency control to cancel previous runs on the same ref
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-check:
+    uses: ./.github/workflows/release-check.yml
+
+  backend-test:
+    uses: ./.github/workflows/backend.yml
+
+  frontend-test:
+    uses: ./.github/workflows/frontend.yml
+
+  e2e-test:
+    uses: ./.github/workflows/e2e.yml
+
+  summary:
+    needs: [release-check, backend-test, frontend-test, e2e-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Download Reports
+      - name: Download Pytest Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: pytest-reports
+          path: pytest-reports
+        continue-on-error: true
+
+      - name: Download Vitest Reports
+        uses: actions/download-artifact@v4
+        with:
+          name: vitest-reports
+          path: vitest-reports
+        continue-on-error: true
+
+      - name: Download Screenshot Evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: validation-screenshots
+          path: validation-screenshots
+        continue-on-error: true
+
+      # Generate CI Summary
+      - name: Compile and Publish Summary
+        run: |
+          node scripts/generate_ci_summary.js
