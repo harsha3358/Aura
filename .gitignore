@@ -1,0 +1,14 @@
+node_modules/
+venv/
+.env
+*.log
+*.pyc
+__pycache__/
+.pytest_cache/
+.vscode/
+.idea/
+dist/
+apps/api/pytest_error.txt
+apps/api/pytest_error_utf8.txt
+scratch/
+
