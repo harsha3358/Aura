@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from app.main import app
 from app.auth import get_current_user
 from app.dependencies import get_db
-from app.models.core import User, Context, Project, Task, Deadline, Decision
+from app.models.core import User, Context, Project, Task, Deadline, Decision, Fact, Conversation, Message, ExtractionFeedback, ExecutiveBrief, BriefFeedback, KnowledgeReview, Observation, ContextAssignment
 
 MOCK_USER_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 mock_user = User(id=MOCK_USER_ID, email="test@example.com", display_name="Test User")
@@ -27,11 +27,39 @@ async def test_briefing_generation_and_retrieval(anyio_backend):
 
     # 1. Setup mock database records
     # Clean up old records for mock user if any
-    from sqlalchemy import delete
+    from sqlalchemy import delete, select
+    
+    await db.execute(delete(BriefFeedback).where(BriefFeedback.user_id == MOCK_USER_ID))
+    await db.execute(delete(ExecutiveBrief).where(ExecutiveBrief.user_id == MOCK_USER_ID))
+    await db.execute(delete(ExtractionFeedback).where(ExtractionFeedback.user_id == MOCK_USER_ID))
+    await db.execute(delete(KnowledgeReview).where(KnowledgeReview.reviewer_id == MOCK_USER_ID))
+    await db.execute(delete(Observation).where(Observation.user_id == MOCK_USER_ID))
+    await db.execute(delete(Fact).where(Fact.user_id == MOCK_USER_ID))
     await db.execute(delete(Decision).where(Decision.user_id == MOCK_USER_ID))
     await db.execute(delete(Deadline).where(Deadline.user_id == MOCK_USER_ID))
     await db.execute(delete(Task).where(Task.user_id == MOCK_USER_ID))
+    
+    # Delete messages referencing mock conversations
+    subq = select(Conversation.id).where(Conversation.user_id == MOCK_USER_ID)
+    convo_ids = (await db.execute(subq)).scalars().all()
+    if convo_ids:
+        msg_subq = select(Message.id).where(Message.conversation_id.in_(convo_ids))
+        msg_ids = (await db.execute(msg_subq)).scalars().all()
+        if msg_ids:
+            await db.execute(delete(ContextAssignment).where(
+                (ContextAssignment.entity_type == "message") & ContextAssignment.entity_id.in_(msg_ids)
+            ))
+        await db.execute(delete(Message).where(Message.conversation_id.in_(convo_ids)))
+        
+    await db.execute(delete(Conversation).where(Conversation.user_id == MOCK_USER_ID))
     await db.execute(delete(Project).where(Project.user_id == MOCK_USER_ID))
+    
+    # Delete context assignments referencing contexts of this user
+    ctx_subq = select(Context.id).where(Context.user_id == MOCK_USER_ID)
+    ctx_ids = (await db.execute(ctx_subq)).scalars().all()
+    if ctx_ids:
+        await db.execute(delete(ContextAssignment).where(ContextAssignment.context_id.in_(ctx_ids)))
+        
     await db.execute(delete(Context).where(Context.user_id == MOCK_USER_ID))
     await db.commit()
 

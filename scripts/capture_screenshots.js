@@ -73,8 +73,10 @@ if (!fs.existsSync('Screenshots')) {
   // 7. Send message & trigger Extraction Chips
   // Create a new session first
   await page.click('[data-testid="new-session-button"]').catch(() => {});
+  await page.waitForTimeout(1500); // Wait for the API to create the conversation session
   await page.fill('[data-testid="message-input"]', 'I decided to use PostgreSQL for our database by Friday');
   await page.click('[data-testid="send-button"]');
+  await page.waitForTimeout(1500); // Wait for processing
   
   // Wait for the extraction chips container to render
   await captureAndValidate('ExtractionChips', '[data-testid="extraction-chips"]');
